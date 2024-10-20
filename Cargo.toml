@@ -3,5 +3,9 @@ name = "maxwellpaulm-rust-wasm"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "bin"
+path = "src/main.rs"
+
 [dependencies]
-yew = "0.18"
+yew = { version = "0.18" }
