@@ -1,2 +1,4 @@
 /dist
 /target
+set_env.sh
+assets
