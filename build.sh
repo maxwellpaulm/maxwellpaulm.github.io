@@ -17,6 +17,7 @@ if [ -z "$GITHUB_TOKEN" ]; then
     echo "Error: GITHUB_TOKEN environment variable is required for private repo access"
     exit 1
 fi
+echo $GITHUB_TOKEN
 
 # Get latest release and extract download URL
 LATEST_URL=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
