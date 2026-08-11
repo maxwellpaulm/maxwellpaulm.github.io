@@ -21,8 +21,7 @@ fi
 # Get asset API URL from the latest release
 ASSET_URL=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
   https://api.github.com/repos/maxwellpaulm/resume/releases/latest | \
-  grep -B5 "paul_maxwell_resume.pdf" | \
-  grep '"url"' | head -1 | cut -d '"' -f 4)
+  jq -r '.assets[] | select(.name == "paul_maxwell_resume.pdf") | .url')
 
 if [ -z "$ASSET_URL" ]; then
     echo "Error: Could not find resume PDF in latest release"
