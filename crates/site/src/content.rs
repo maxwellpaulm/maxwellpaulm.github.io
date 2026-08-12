@@ -2,9 +2,9 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::path::Path;
 
-// TODO(task-4): remove once `layout()`/pages call `Site::load`. Until then
-// clippy flags these dead because this crate has no lib target and no
-// caller outside `#[cfg(test)]`.
+// TODO(task-6): remove once About renders site.about; fields become live
+// across Tasks 5-6 (name/lede/bio/role/work/credential in 5, about in 6).
+// Only site.location is read today, by rail().
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -21,6 +21,7 @@ pub struct Site {
     pub work: Vec<Work>,
 }
 
+// TODO(task-5): remove once work_list() renders these fields.
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -32,6 +33,7 @@ pub struct Work {
 }
 
 impl Site {
+    // TODO(task-7): remove once build.rs loads content/site.toml.
     #[allow(dead_code)]
     pub fn load(path: &Path) -> Result<Self> {
         let raw = std::fs::read_to_string(path)
