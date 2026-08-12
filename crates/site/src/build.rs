@@ -222,9 +222,40 @@ mod tests {
             !html.contains(r#"aria-current="page""#),
             "404 rail must mark nothing current: {html}"
         );
+        assert!(
+            !html.contains(r#"rel="canonical""#),
+            "404 page has no single stable URL, so it must not claim a canonical: {html}"
+        );
+        assert!(!html.contains("og:url"), "404 page must not emit og:url: {html}");
+        assert!(
+            html.contains(r#"<meta name="robots" content="noindex">"#),
+            "404 page must be noindexed: {html}"
+        );
 
         let sitemap = std::fs::read_to_string(tmp.join("sitemap.xml")).expect("sitemap written");
         assert!(!sitemap.contains("404"), "404 must not appear in the sitemap: {sitemap}");
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn build_gives_every_real_route_its_own_canonical_and_no_noindex() {
+        let tmp = std::env::temp_dir().join("site-build-test-canonical");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
+
+        for route in Route::ALL {
+            let html = std::fs::read_to_string(tmp.join(route.output_path())).unwrap();
+            let canonical = format!(r#"<link rel="canonical" href="{}{}">"#, site.url, route.path());
+            assert!(html.contains(&canonical), "{:?} missing its canonical: {html}", route);
+            assert!(
+                !html.contains("noindex"),
+                "{:?} must not be noindexed: {html}",
+                route
+            );
+        }
 
         std::fs::remove_dir_all(&tmp).ok();
     }
