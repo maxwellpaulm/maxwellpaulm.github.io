@@ -8,9 +8,8 @@ pub fn render(site: &Site) -> Markup {
         // Rendered from `site.name` rather than hardcoded, so the field is
         // actually read — an unread struct field fails `clippy -D warnings`.
         h1 {
-            @for (i, part) in site.name.split(' ').enumerate() {
-                @if i > 0 { br; }
-                (part)
+            @for part in site.name.split(' ') {
+                span .name-line { (part) }
             }
         }
         p .lede { (site.lede) }

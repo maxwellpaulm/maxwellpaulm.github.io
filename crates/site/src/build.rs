@@ -16,12 +16,22 @@ fn write(path: &Path, body: &str, written: &mut Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
+/// Build artifacts that must never be published: licence notes meant for
+/// contributors reading the repo, and placeholder dotfiles that keep empty
+/// directories tracked in git.
+fn is_publish_excluded(name: &std::ffi::OsStr) -> bool {
+    name == "README.md" || name.to_string_lossy().starts_with('.')
+}
+
 fn copy_tree(from: &Path, to: &Path, written: &mut Vec<PathBuf>) -> Result<()> {
     if !from.exists() {
         return Ok(());
     }
     for entry in std::fs::read_dir(from)? {
         let entry = entry?;
+        if is_publish_excluded(&entry.file_name()) {
+            continue;
+        }
         let target = to.join(entry.file_name());
         if entry.file_type()?.is_dir() {
             copy_tree(&entry.path(), &target, written)?;
@@ -65,9 +75,9 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
         eprintln!("warning: {msg} (non-strict build, continuing)");
     }
 
-    if let Ok(cname) = std::fs::read_to_string(root.join("CNAME")) {
-        write(&out.join("CNAME"), &cname, &mut written)?;
-    }
+    let cname = std::fs::read_to_string(root.join("CNAME"))
+        .context("reading CNAME — required for the custom domain")?;
+    write(&out.join("CNAME"), &cname, &mut written)?;
 
     checks::verify(out, strict)?;
 
@@ -94,6 +104,9 @@ mod tests {
         }
         assert!(tmp.join("style.css").exists(), "stylesheet not emitted");
         assert!(tmp.join("fonts/InterVariable.woff2").exists(), "fonts not copied");
+        assert!(tmp.join("CNAME").exists(), "CNAME missing — custom domain would break");
+        assert!(!tmp.join("fonts/README.md").exists(), "licence notes must not be published");
+        assert!(!tmp.join("assets/.gitkeep").exists(), "dotfiles must not be published");
         assert!(written.len() >= 5);
 
         std::fs::remove_dir_all(&tmp).ok();

@@ -81,6 +81,7 @@ pub fn stylesheet() -> String {
 }}
 :root {{
 {light}
+  color-scheme: light dark;
   --space: 8px;
   --measure: 62ch;
   --font-sans: "Inter", "Helvetica Neue", system-ui, sans-serif;
@@ -141,6 +142,7 @@ a:hover {{ text-decoration: underline; }}
 
 main {{ padding: calc(var(--space) * 6.5) calc(var(--space) * 7) calc(var(--space) * 5); }}
 h1 {{ font-size: 54px; line-height: 1.02; letter-spacing: -0.035em; font-weight: 600; margin: 0 0 calc(var(--space) * 3.25); }}
+.name-line {{ display: block; }}
 h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
 .lede {{ font-size: 17px; line-height: 1.62; max-width: var(--measure); margin: 0 0 calc(var(--space) * 1.75); }}
 .prose {{ font-size: 14.5px; line-height: 1.65; max-width: var(--measure); color: var(--muted); }}

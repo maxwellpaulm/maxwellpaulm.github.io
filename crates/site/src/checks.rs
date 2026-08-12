@@ -20,6 +20,10 @@ fn references(html: &str) -> Vec<String> {
 
 /// Maps a rooted site path to the file that must exist in `out`.
 fn target(out: &Path, link: &str) -> PathBuf {
+    let link = link
+        .split(['#', '?'])
+        .next()
+        .expect("split always yields at least one element");
     let rel = link.trim_start_matches('/');
     if link.ends_with('/') || link.is_empty() {
         out.join(rel).join("index.html")
@@ -110,6 +114,20 @@ mod tests {
         let dir = scaffold("checks-asset", r#"<img src="/logo.svg">"#);
         let err = verify(&dir, true).expect_err("missing asset must fail the build");
         assert!(err.to_string().contains("/logo.svg"), "got: {err}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn strips_fragment_before_resolving() {
+        let dir = scaffold(
+            "checks-fragment",
+            r#"<a href="/resume/#experience">Experience</a>"#,
+        );
+        std::fs::create_dir_all(dir.join("resume")).unwrap();
+        std::fs::write(dir.join("resume/index.html"), "<!DOCTYPE html>").unwrap();
+
+        assert_eq!(target(&dir, "/resume/#experience"), dir.join("resume/index.html"));
+        assert!(verify(&dir, true).is_ok());
         std::fs::remove_dir_all(&dir).ok();
     }
 }

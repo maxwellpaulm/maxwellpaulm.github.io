@@ -12,7 +12,7 @@ pub fn render(site: &Site) -> Markup {
         p .prose {
             a href=(RESUME_PDF) download { "Download PDF" }
         }
-        object data=(RESUME_PDF) type="application/pdf"
+        object data=(RESUME_PDF) type="application/pdf" aria-label="Resume PDF"
             style="width:100%;height:80vh;border:1px solid var(--rule);margin-top:1.5rem" {
             p .prose {
                 "Your browser cannot display the embedded PDF. "
