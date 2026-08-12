@@ -4,6 +4,7 @@ role = "Lead Software Engineer / P-1 AI / 2025 —"
 lede = "I build the infrastructure that gets AI systems safely into production — deployment, observability, and the trust boundaries in between."
 bio = "Currently leading platform work at P-1 AI, where our engineering agent runs inside customers' own cloud environments so their data never has to leave. Before that: fraud prevention at Amazon, credit underwriting infrastructure at Ampla, distributed portfolio construction at BlackRock."
 credential = "NSA Codebreaker Challenge — one of 24 finishers out of more than 3,300 participants, 2023."
+projects_intro = "Selected work, most recent first. Longer write-ups and interactive demos are on the way."
 
 about = [
   "I work at the layer where a system meets production and has to be trusted. That has meant bring-your-own-cloud deployment for an AI engineering agent, zero-trust gateways that keep real credentials out of agent sandboxes, real-time fraud detection, and underwriting controls that have to be auditable by people who are not engineers.",

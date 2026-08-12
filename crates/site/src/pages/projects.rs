@@ -10,7 +10,7 @@ use maud::{html, Markup};
 pub fn render(site: &Site) -> Markup {
     let main = html! {
         h1 { "Projects" }
-        p .prose { "Selected work, most recent first. Longer write-ups and interactive demos are on the way." }
+        p .prose { (site.projects_intro) }
         div .section-head {
             span .mono { "Selected Work" }
             span .mono { (format!("{:02}", site.work.len())) }
@@ -23,13 +23,14 @@ pub fn render(site: &Site) -> Markup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::Path;
+    use crate::content::fixture_site;
 
     #[test]
     fn projects_lists_the_work_entries_without_placeholder_copy() {
-        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
+        let site = fixture_site();
         let out = render(&site).into_string();
         assert!(out.contains("Transaction Tagging Engine"));
+        assert!(out.contains(&site.projects_intro), "intro should come from site.toml");
         for banned in ["Project 1", "Description of your", "goes here", "Lorem"] {
             assert!(!out.contains(banned), "placeholder copy found: {banned}");
         }

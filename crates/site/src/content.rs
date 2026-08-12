@@ -12,6 +12,7 @@ pub struct Site {
     pub lede: String,
     pub bio: String,
     pub credential: String,
+    pub projects_intro: String,
     pub about: Vec<String>,
     #[serde(default)]
     pub work: Vec<Work>,
@@ -63,6 +64,7 @@ role = "Z"
 lede = "L"
 bio = "B"
 credential = "C"
+projects_intro = "P"
 about = []
 surprise = "should not parse"
 "#;
