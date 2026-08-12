@@ -15,7 +15,7 @@ Every task's requirements implicitly include this section.
 - **Rust edition 2021.** In maud templates on this edition, `#id` shorthand must be preceded by a space, and void elements terminate with `;`.
 - **Colour tokens, light:** paper `#FBFAF8`, surface `#FFFFFF`, ink `#14161A`, muted `#6E7076`, rule `#E5E2DC`, accent `#A8431E`.
 - **Colour tokens, dark:** paper `#0E0F11`, surface `#16181B`, ink `#E9E7E2`, muted `#94989F`, rule `#25282D`, accent `#E0764A`.
-- **Accent is used only** for links, focus rings, active nav state, and section markers.
+- **Accent is used only** for links, focus rings, active nav state, section markers, and the organisation label in work-item rows (`.org`). Nothing else.
 - **All token pairs must meet WCAG AA (≥ 4.5:1).** Task 2 enforces this with a test. The tightest pair is light muted-on-paper at ≈ 4.74:1 — do not darken the paper or lighten the muted token without re-running that test.
 - **Spacing is an 8px scale.** Motion is capped at 180ms and must respect `prefers-reduced-motion`.
 - **Prose measure is 56–68 characters.**

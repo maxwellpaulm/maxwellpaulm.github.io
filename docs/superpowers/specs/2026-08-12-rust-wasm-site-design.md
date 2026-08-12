@@ -122,7 +122,8 @@ system rather than two stylesheets.
   accent `#A8431E`.
 - **Palette (dark):** paper `#0E0F11`, surface `#16181B`, ink `#E9E7E2`, muted `#94989F`,
   rule `#25282D`, accent `#E0764A`.
-- **Accent usage:** links, focus rings, active nav state, and section markers only.
+- **Accent usage:** links, focus rings, active nav state, section markers, and the
+  organisation label in work-item rows. Nothing else.
 - **Type:** grotesk for headings and body, monospace for labels and metadata (dates, tech
   tags, section markers). Display sizes carry negative tracking (about `-0.035em`). Prose is
   set to roughly a 56–68 character measure.
