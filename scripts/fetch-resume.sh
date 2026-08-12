@@ -9,7 +9,7 @@ fi
 
 mkdir -p assets
 
-ASSET_URL=$(curl -sf -H "Authorization: token $GITHUB_TOKEN" \
+ASSET_URL=$(curl -sSf -H "Authorization: token $GITHUB_TOKEN" \
   https://api.github.com/repos/maxwellpaulm/resume/releases/latest | \
   jq -r '.assets[] | select(.name == "paul_maxwell_resume.pdf") | .url')
 
