@@ -28,6 +28,11 @@ pub fn page(site: &Site, route: Route, title: &str, body: Markup) -> Markup {
                 meta property="og:image" content=(og_image);
                 meta name="twitter:card" content="summary_large_image";
                 link rel="stylesheet" href="/style.css";
+                script {
+                    (maud::PreEscaped(
+                        "try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.dataset.theme='dark'}catch(e){}"
+                    ))
+                }
             }
             body {
                 (body)
@@ -142,6 +147,23 @@ mod tests {
             r#"<meta property="og:title" content="Resume · {}">"#,
             site.name
         )));
+    }
+
+    #[test]
+    fn head_applies_the_stored_theme_before_first_paint() {
+        let site = fixture_site();
+        let out = page(&site, Route::Index, "Index", html! { p { "x" } }).into_string();
+        assert!(
+            out.contains("localStorage.getItem"),
+            "missing inline theme-detection script: {out}"
+        );
+        let script_start = out.find("<script>").expect("script tag present");
+        let script_end = out.find("</script>").expect("closing script tag present");
+        let script_body = &out[script_start..script_end];
+        assert!(
+            !script_body.contains("&quot;"),
+            "script body was HTML-escaped, corrupting the JS: {script_body}"
+        );
     }
 
     #[test]

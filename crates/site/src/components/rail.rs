@@ -19,6 +19,24 @@ pub fn rail(site: &Site, current: Route) -> Markup {
             }
             div .rail-foot {
                 div .mono { (site.location) }
+                button type="button" .theme-toggle id="theme-toggle" aria-label="Toggle dark mode" aria-pressed="false" {
+                    "Dark"
+                }
+                script {
+                    (maud::PreEscaped(
+                        "(function(){\
+                        var b=document.getElementById('theme-toggle');\
+                        var sync=function(){b.setAttribute('aria-pressed',document.documentElement.dataset.theme==='dark'?'true':'false')};\
+                        sync();\
+                        b.addEventListener('click',function(){\
+                        var dark=document.documentElement.dataset.theme==='dark';\
+                        if(dark){delete document.documentElement.dataset.theme}else{document.documentElement.dataset.theme='dark'}\
+                        try{localStorage.setItem('theme',dark?'light':'dark')}catch(e){}\
+                        sync();\
+                        });\
+                        })();"
+                    ))
+                }
             }
         }
     }
@@ -50,5 +68,16 @@ mod tests {
     fn rail_shows_location() {
         let out = rail(&site(), Route::Index).into_string();
         assert!(out.contains("Washington, DC"));
+    }
+
+    #[test]
+    fn rail_renders_an_accessible_theme_toggle_button() {
+        let out = rail(&site(), Route::Index).into_string();
+        assert!(out.contains("<button"), "toggle must be a real button element");
+        assert!(
+            out.contains(r#"aria-label="Toggle dark mode""#),
+            "missing accessible name: {out}"
+        );
+        assert!(out.contains("aria-pressed"), "missing aria-pressed state: {out}");
     }
 }

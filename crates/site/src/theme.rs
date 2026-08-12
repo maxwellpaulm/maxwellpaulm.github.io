@@ -81,7 +81,7 @@ pub fn stylesheet() -> String {
 }}
 :root {{
 {light}
-  color-scheme: light dark;
+  color-scheme: light;
   --space: 8px;
   --measure: 62ch;
   --font-sans: "Inter", "Helvetica Neue", system-ui, sans-serif;
@@ -89,10 +89,9 @@ pub fn stylesheet() -> String {
   --motion: 180ms;
 }}
 
-@media (prefers-color-scheme: dark) {{
-  :root {{
+:root[data-theme="dark"] {{
 {dark}
-  }}
+  color-scheme: dark;
 }}
 
 *, *::before, *::after {{ box-sizing: border-box; }}
@@ -139,6 +138,21 @@ a:hover {{ text-decoration: underline; }}
 .rail nav a[aria-current="page"] {{ color: var(--ink); font-weight: 500; }}
 .rail nav a[aria-current="page"]::before {{ content: "— "; color: var(--accent); }}
 .rail-foot {{ margin-top: auto; }}
+.theme-toggle {{
+  margin-top: calc(var(--space) * 1.5);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: color var(--motion) ease, border-color var(--motion) ease;
+}}
+.theme-toggle:hover {{ color: var(--ink); border-color: var(--accent); }}
 
 main {{ padding: calc(var(--space) * 6.5) calc(var(--space) * 7) calc(var(--space) * 5); }}
 h1 {{ font-size: 54px; line-height: 1.02; letter-spacing: -0.035em; font-weight: 600; margin: 0 0 calc(var(--space) * 3.25); }}
@@ -221,8 +235,22 @@ mod tests {
         let css = stylesheet();
         assert!(css.contains("--paper: #FBFAF8"), "light tokens missing");
         assert!(css.contains("--paper: #0E0F11"), "dark tokens missing");
-        assert!(css.contains("prefers-color-scheme: dark"));
         assert!(css.contains("prefers-reduced-motion: reduce"));
         assert!(css.contains(":focus-visible"), "focus ring missing");
+    }
+
+    #[test]
+    fn theme_is_explicit_not_os_driven() {
+        let css = stylesheet();
+        assert!(
+            css.contains(r#"[data-theme="dark"]"#),
+            "missing explicit dark theme selector"
+        );
+        assert!(
+            !css.contains("prefers-color-scheme"),
+            "OS-driven theming must not select the theme; prefers-color-scheme should be gone"
+        );
+        assert!(css.contains("color-scheme: light"), "missing light color-scheme");
+        assert!(css.contains("color-scheme: dark"), "missing dark color-scheme");
     }
 }
