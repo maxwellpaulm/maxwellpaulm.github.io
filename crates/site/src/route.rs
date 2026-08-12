@@ -18,10 +18,6 @@ impl Route {
         }
     }
 
-    // TODO(task-7): remove once `build::build` calls `output_path()` to
-    // place each rendered page. `rail()` (Task 4) only reaches `path()` and
-    // `label()`, so this method has no live caller outside tests until then.
-    #[allow(dead_code)]
     pub fn output_path(&self) -> &'static str {
         match self {
             Route::Index => "index.html",

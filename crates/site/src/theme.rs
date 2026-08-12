@@ -8,10 +8,6 @@ pub struct Palette {
     pub accent: &'static str,
 }
 
-// TODO(task-7): remove once `build.rs` calls `stylesheet()`. Until then
-// clippy flags these dead because this crate has no lib target and no
-// caller outside `#[cfg(test)]`.
-#[allow(dead_code)]
 pub const LIGHT: Palette = Palette {
     paper: "#FBFAF8",
     surface: "#FFFFFF",
@@ -21,7 +17,6 @@ pub const LIGHT: Palette = Palette {
     accent: "#A8431E",
 };
 
-#[allow(dead_code)]
 pub const DARK: Palette = Palette {
     paper: "#0E0F11",
     surface: "#16181B",
@@ -31,6 +26,7 @@ pub const DARK: Palette = Palette {
     accent: "#E0764A",
 };
 
+#[cfg(test)]
 fn channel_luminance(byte: u8) -> f64 {
     let c = f64::from(byte) / 255.0;
     if c <= 0.04045 {
@@ -40,6 +36,7 @@ fn channel_luminance(byte: u8) -> f64 {
     }
 }
 
+#[cfg(test)]
 fn relative_luminance(hex: &str) -> f64 {
     let h = hex.trim_start_matches('#');
     let parse = |i: usize| u8::from_str_radix(&h[i..i + 2], 16).expect("valid hex colour");
@@ -49,10 +46,10 @@ fn relative_luminance(hex: &str) -> f64 {
 }
 
 /// WCAG 2.1 contrast ratio between two hex colours, from 1.0 to 21.0.
-// TODO(task-7): remove once `build.rs` calls `stylesheet()`. Until then
-// clippy flags this dead because this crate has no lib target and no
-// caller outside `#[cfg(test)]`.
-#[allow(dead_code)]
+///
+/// Exists purely to enforce the WCAG invariant in tests; no build-time
+/// caller, so it lives only in the test target.
+#[cfg(test)]
 pub fn contrast_ratio(fg: &str, bg: &str) -> f64 {
     let (a, b) = (relative_luminance(fg), relative_luminance(bg));
     let (hi, lo) = if a > b { (a, b) } else { (b, a) };
@@ -68,13 +65,21 @@ fn tokens(p: Palette) -> String {
 
 /// The complete stylesheet, emitted from the tokens above so light and dark
 /// stay one system rather than two hand-maintained sheets.
-// TODO(task-7): remove once `build.rs` calls `stylesheet()`. Until then
-// clippy flags this dead because this crate has no lib target and no
-// caller outside `#[cfg(test)]`.
-#[allow(dead_code)]
 pub fn stylesheet() -> String {
     format!(
-        r#":root {{
+        r#"@font-face {{
+  font-family: "Inter";
+  src: url("/fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}}
+@font-face {{
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}}
+:root {{
 {light}
   --space: 8px;
   --measure: 62ch;

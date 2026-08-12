@@ -6,9 +6,6 @@ use maud::{html, Markup};
 /// Published location of the PDF fetched from the private release.
 pub const RESUME_PDF: &str = "/assets/paul_maxwell_resume.pdf";
 
-// TODO(task-7): remove once `build.rs` calls `render()` to place the resume
-// page in the build output. No caller exists outside tests until then.
-#[allow(dead_code)]
 pub fn render(site: &Site) -> Markup {
     let main = html! {
         h1 { "Resume" }

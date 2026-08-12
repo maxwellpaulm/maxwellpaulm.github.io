@@ -28,8 +28,6 @@ pub struct Work {
 }
 
 impl Site {
-    // TODO(task-7): remove once build.rs loads content/site.toml.
-    #[allow(dead_code)]
     pub fn load(path: &Path) -> Result<Self> {
         let raw = std::fs::read_to_string(path)
             .with_context(|| format!("reading {}", path.display()))?;

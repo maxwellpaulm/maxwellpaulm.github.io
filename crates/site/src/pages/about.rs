@@ -3,9 +3,6 @@ use crate::content::Site;
 use crate::route::Route;
 use maud::{html, Markup};
 
-// TODO(task-7): remove once `build.rs` calls `render()` to place the about
-// page in the build output. No caller exists outside tests until then.
-#[allow(dead_code)]
 pub fn render(site: &Site) -> Markup {
     let main = html! {
         h1 { "About" }
