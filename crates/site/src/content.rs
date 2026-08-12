@@ -21,8 +21,6 @@ pub struct Site {
     pub work: Vec<Work>,
 }
 
-// TODO(task-5): remove once work_list() renders these fields.
-#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Work {

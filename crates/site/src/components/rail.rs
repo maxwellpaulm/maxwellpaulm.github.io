@@ -4,9 +4,6 @@ use maud::{html, Markup};
 
 /// The persistent left rail from composition A. Collapses to a top bar
 /// under 640px via the stylesheet.
-// TODO(task-5): remove once `layout()` calls `rail()`. Until then clippy
-// flags it dead because this crate has no lib target and no caller.
-#[allow(dead_code)]
 pub fn rail(site: &Site, current: Route) -> Markup {
     html! {
         div .rail {
