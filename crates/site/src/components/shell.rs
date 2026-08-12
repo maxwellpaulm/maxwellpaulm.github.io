@@ -41,19 +41,29 @@ pub fn page(site: &Site, route: Route, title: &str, body: Markup) -> Markup {
     }
 }
 
+/// Composition A: rail plus main column. `nav_current` drives which nav entry
+/// (if any) the rail marks with `aria-current`.
+fn composition(site: &Site, nav_current: Option<Route>, main: Markup) -> Markup {
+    html! {
+        div .layout {
+            (rail(site, nav_current))
+            main { (main) }
+        }
+    }
+}
+
 /// Composition A: rail plus main column, wrapped in the document shell.
 pub fn layout(site: &Site, current: Route, title: &str, main: Markup) -> Markup {
-    page(
-        site,
-        current,
-        title,
-        html! {
-            div .layout {
-                (rail(site, current))
-                main { (main) }
-            }
-        },
-    )
+    page(site, current, title, composition(site, Some(current), main))
+}
+
+/// The document shell for `dist/404.html`. GitHub Pages serves this file
+/// verbatim for any request that doesn't match a real path, so it isn't tied
+/// to a `Route`: `Route::ALL` drives the nav, the sitemap, and the build
+/// loop, and a 404 entry belongs in none of those. The rail marks nothing
+/// current; `Route::Index` is used only for `page`'s canonical/OG plumbing.
+pub fn not_found(site: &Site, title: &str, main: Markup) -> Markup {
+    page(site, Route::Index, title, composition(site, None, main))
 }
 
 #[cfg(test)]
@@ -198,5 +208,19 @@ mod tests {
         assert!(out.contains(r#"class="rail""#));
         assert!(out.contains("<main>"));
         assert!(out.contains("<p>body</p>"));
+    }
+
+    #[test]
+    fn not_found_renders_the_full_document_with_nothing_marked_current() {
+        let site = fixture_site();
+        let out = not_found(&site, "Not Found", html! { p { "gone" } }).into_string();
+        assert!(out.starts_with("<!DOCTYPE html>"), "missing doctype: {out}");
+        assert!(out.contains(r#"class="layout""#));
+        assert!(out.contains(r#"class="rail""#));
+        assert!(out.contains("<p>gone</p>"));
+        assert!(
+            !out.contains(r#"aria-current="page""#),
+            "404 rail must mark nothing current: {out}"
+        );
     }
 }

@@ -145,7 +145,7 @@ a:hover {{ text-decoration: underline; }}
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
-  background: transparent;
+  background: var(--surface);
   border: 1px solid var(--rule);
   border-radius: 3px;
   padding: 5px 9px;
@@ -220,14 +220,25 @@ mod tests {
     #[test]
     fn every_token_pair_meets_wcag_aa() {
         for (name, p) in [("light", LIGHT), ("dark", DARK)] {
-            for (label, fg) in [("ink", p.ink), ("muted", p.muted), ("accent", p.accent)] {
-                let ratio = contrast_ratio(fg, p.paper);
-                assert!(
-                    ratio >= 4.5,
-                    "{name}/{label} on paper is {ratio:.2}:1, below WCAG AA 4.5:1"
-                );
+            for (bg_label, bg) in [("paper", p.paper), ("surface", p.surface)] {
+                for (label, fg) in [("ink", p.ink), ("muted", p.muted), ("accent", p.accent)] {
+                    let ratio = contrast_ratio(fg, bg);
+                    assert!(
+                        ratio >= 4.5,
+                        "{name}/{label} on {bg_label} is {ratio:.2}:1, below WCAG AA 4.5:1"
+                    );
+                }
             }
         }
+    }
+
+    #[test]
+    fn theme_toggle_uses_the_surface_token_as_its_background() {
+        let css = stylesheet();
+        assert!(
+            css.contains("background: var(--surface);"),
+            "the --surface token has no consumer: {css}"
+        );
     }
 
     #[test]
