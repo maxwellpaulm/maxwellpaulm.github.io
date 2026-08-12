@@ -1,3 +1,5 @@
 /dist
 /target
-set_env.sh/assets/paul_maxwell_resume.pdf
+set_env.sh
+/assets/paul_maxwell_resume.pdf
+.superpowers/
