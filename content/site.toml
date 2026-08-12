@@ -4,6 +4,8 @@ role = "Lead Software Engineer / P-1 AI / 2025 —"
 lede = "I build the infrastructure that gets AI systems safely into production — deployment, observability, and the trust boundaries in between."
 bio = "Currently leading platform work at P-1 AI, where our engineering agent runs inside customers' own cloud environments so their data never has to leave. Before that: fraud prevention at Amazon, credit underwriting infrastructure at Ampla, distributed portfolio construction at BlackRock."
 credential = "NSA Codebreaker Challenge — one of 24 finishers out of more than 3,300 participants, 2023."
+description = "Paul Maxwell — Lead Software Engineer at P-1 AI, building the infrastructure that gets AI systems safely into production. Washington, DC."
+url = "https://paul-maxwell.com"
 projects_intro = "Selected work, most recent first. Longer write-ups and interactive demos are on the way."
 
 about = [

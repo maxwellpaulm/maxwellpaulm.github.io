@@ -12,6 +12,10 @@ pub struct Site {
     pub lede: String,
     pub bio: String,
     pub credential: String,
+    /// Meta/OG description.
+    pub description: String,
+    /// Canonical base URL, no trailing slash.
+    pub url: String,
     pub projects_intro: String,
     pub about: Vec<String>,
     #[serde(default)]

@@ -45,6 +45,30 @@ fn copy_tree(from: &Path, to: &Path, written: &mut Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
+/// `User-agent: *\nAllow: /\n\nSitemap: {url}/sitemap.xml\n`
+fn robots_txt(site: &Site) -> String {
+    format!("User-agent: *\nAllow: /\n\nSitemap: {}/sitemap.xml\n", site.url)
+}
+
+/// A standard sitemap with one `<url>` per route — generated from
+/// `Route::ALL` so it cannot drift from the real route set.
+fn sitemap_xml(site: &Site) -> String {
+    let mut urls = String::new();
+    for route in Route::ALL {
+        urls.push_str(&format!(
+            "  <url><loc>{}{}</loc></url>\n",
+            site.url,
+            route.path()
+        ));
+    }
+    format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+         <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n\
+         {urls}\
+         </urlset>\n"
+    )
+}
+
 /// Renders the whole site into `out`. With `strict`, a missing resume PDF is a
 /// hard error; without it, a warning — so local builds work without the token
 /// that CI uses to fetch the private release.
@@ -63,6 +87,8 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     }
 
     write(&out.join("style.css"), &theme::stylesheet(), &mut written)?;
+    write(&out.join("robots.txt"), &robots_txt(&site), &mut written)?;
+    write(&out.join("sitemap.xml"), &sitemap_xml(&site), &mut written)?;
     copy_tree(&root.join("static"), out, &mut written)?;
     copy_tree(&root.join("assets"), &out.join("assets"), &mut written)?;
 
@@ -108,6 +134,46 @@ mod tests {
         assert!(!tmp.join("fonts/README.md").exists(), "licence notes must not be published");
         assert!(!tmp.join("assets/.gitkeep").exists(), "dotfiles must not be published");
         assert!(written.len() >= 5);
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn build_writes_robots_and_sitemap_covering_every_route() {
+        let tmp = std::env::temp_dir().join("site-build-test-seo");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+
+        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
+
+        let robots = std::fs::read_to_string(tmp.join("robots.txt")).expect("robots.txt written");
+        assert!(robots.contains("User-agent: *"));
+        assert!(robots.contains("Allow: /"));
+        assert!(robots.contains(&format!("Sitemap: {}/sitemap.xml", site.url)));
+
+        let sitemap =
+            std::fs::read_to_string(tmp.join("sitemap.xml")).expect("sitemap.xml written");
+        assert!(sitemap.contains(r#"xmlns="http://www.sitemaps.org/schemas/sitemap/0.9""#));
+        for route in Route::ALL {
+            let loc = format!("<loc>{}{}</loc>", site.url, route.path());
+            assert!(sitemap.contains(&loc), "sitemap missing {loc}: {sitemap}");
+        }
+        assert!(!sitemap.contains("/demos/"), "demos must not exist until a later bucket");
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn build_copies_favicon_and_social_images() {
+        let tmp = std::env::temp_dir().join("site-build-test-icons");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+
+        for asset in ["favicon.svg", "apple-touch-icon.png", "og-image.png"] {
+            assert!(tmp.join(asset).exists(), "missing {asset} in build output");
+        }
 
         std::fs::remove_dir_all(&tmp).ok();
     }
