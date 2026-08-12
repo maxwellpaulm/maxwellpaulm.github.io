@@ -30,7 +30,7 @@ pub fn page(site: &Site, route: Route, title: &str, body: Markup) -> Markup {
                 link rel="stylesheet" href="/style.css";
                 script {
                     (maud::PreEscaped(
-                        "try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.dataset.theme='dark'}catch(e){}"
+                        r#"try{var t=localStorage.getItem("theme");if(t==="dark")document.documentElement.dataset.theme="dark"}catch(e){}"#
                     ))
                 }
             }
@@ -176,16 +176,15 @@ mod tests {
     fn head_applies_the_stored_theme_before_first_paint() {
         let site = fixture_site();
         let out = page(&site, Route::Index, "Index", html! { p { "x" } }).into_string();
+        // A double-quoted fragment, verbatim: if PreEscaped were removed, the
+        // `"` characters would come out as `&quot;` and this would fail.
         assert!(
-            out.contains("localStorage.getItem"),
+            out.contains(r#"localStorage.getItem("theme")"#),
             "missing inline theme-detection script: {out}"
         );
-        let script_start = out.find("<script>").expect("script tag present");
-        let script_end = out.find("</script>").expect("closing script tag present");
-        let script_body = &out[script_start..script_end];
         assert!(
-            !script_body.contains("&quot;"),
-            "script body was HTML-escaped, corrupting the JS: {script_body}"
+            !out.contains("&quot;"),
+            "script body was HTML-escaped, corrupting the JS: {out}"
         );
     }
 

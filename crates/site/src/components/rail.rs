@@ -24,17 +24,21 @@ pub fn rail(site: &Site, current: Route) -> Markup {
                 }
                 script {
                     (maud::PreEscaped(
-                        "(function(){\
-                        var b=document.getElementById('theme-toggle');\
-                        var sync=function(){b.setAttribute('aria-pressed',document.documentElement.dataset.theme==='dark'?'true':'false')};\
-                        sync();\
-                        b.addEventListener('click',function(){\
-                        var dark=document.documentElement.dataset.theme==='dark';\
-                        if(dark){delete document.documentElement.dataset.theme}else{document.documentElement.dataset.theme='dark'}\
-                        try{localStorage.setItem('theme',dark?'light':'dark')}catch(e){}\
-                        sync();\
-                        });\
-                        })();"
+                        r#"(function(){
+var b=document.getElementById("theme-toggle");
+var sync=function(){
+var dark=document.documentElement.dataset.theme==="dark";
+b.setAttribute("aria-pressed",dark?"true":"false");
+b.textContent=dark?"Light":"Dark";
+};
+sync();
+b.addEventListener("click",function(){
+var dark=document.documentElement.dataset.theme==="dark";
+if(dark){delete document.documentElement.dataset.theme}else{document.documentElement.dataset.theme="dark"}
+try{localStorage.setItem("theme",dark?"light":"dark")}catch(e){}
+sync();
+});
+})();"#
                     ))
                 }
             }
@@ -79,5 +83,36 @@ mod tests {
             "missing accessible name: {out}"
         );
         assert!(out.contains("aria-pressed"), "missing aria-pressed state: {out}");
+    }
+
+    #[test]
+    fn rail_button_defaults_to_the_server_rendered_light_state_label() {
+        let out = rail(&site(), Route::Index).into_string();
+        let btn_start = out.find("<button").expect("button present");
+        let btn_end = out.find("</button>").expect("closing button tag present") + "</button>".len();
+        let button = &out[btn_start..btn_end];
+        assert!(
+            button.contains(">Dark<"),
+            "button should default to \"Dark\" (the site is server-rendered light): {button}"
+        );
+    }
+
+    #[test]
+    fn toggle_script_syncs_both_aria_pressed_and_the_visible_label() {
+        let out = rail(&site(), Route::Index).into_string();
+        // A double-quoted fragment, verbatim: if PreEscaped were removed, the
+        // `"` characters would come out as `&quot;` and this would fail.
+        assert!(
+            out.contains(r#"document.getElementById("theme-toggle")"#),
+            "missing toggle script: {out}"
+        );
+        assert!(
+            out.contains(r#"b.textContent=dark?"Light":"Dark";"#),
+            "sync function does not update the button's visible label: {out}"
+        );
+        assert!(
+            !out.contains("&quot;"),
+            "toggle script body was HTML-escaped, corrupting the JS: {out}"
+        );
     }
 }
