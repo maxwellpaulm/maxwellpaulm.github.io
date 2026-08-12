@@ -97,10 +97,13 @@ impl Grid {
 mod tests {
     use super::*;
 
-    /// A = 1, B = 0 everywhere is an exact fixed point: the reaction term
-    /// A·B² is zero, feed f·(1 − A) is zero, kill (k + f)·B is zero, and the
-    /// Laplacian of a uniform field is zero. If stepping perturbs it, the
-    /// update rule is wrong.
+    /// A = 1, B = 0 everywhere stays at B = 0 under stepping: every term in
+    /// B's update multiplies a zero B, regardless of the Laplacian's kernel
+    /// weights, so this does not pin the kernel — see
+    /// `laplacian_weights_are_exact` for that. What this does verify is that
+    /// `Grid::new` initialises to the correct steady state and that
+    /// repeated stepping introduces no numerical drift into a uniform
+    /// field.
     #[test]
     fn the_empty_state_is_a_fixed_point() {
         let mut g = Grid::new(16, 16);
@@ -147,16 +150,37 @@ mod tests {
         }
     }
 
+    /// A single seeded cell, one step later, has closed-form neighbour
+    /// values: an orthogonal neighbour gets `DB * 0.2 * 1.0 = 0.1` (its own
+    /// B, reaction, and kill terms are all zero since it starts at B = 0),
+    /// and a diagonal neighbour gets `DB * 0.05 * 1.0 = 0.025`. Asserting
+    /// both pins `DB`, the edge weight, and the diagonal weight at once —
+    /// change any one and this fails.
     #[test]
-    fn the_grid_wraps_rather_than_clamping() {
-        // Seeding at the right edge must influence the left edge, which only
-        // happens if the Laplacian is toroidal.
+    fn laplacian_weights_are_exact() {
+        let mut g = Grid::new(8, 8);
+        g.seed_rect(4, 4, 0);
+        g.step(0.0545, 0.0620);
+        let edge = g.b_at(5, 4);
+        let diagonal = g.b_at(5, 5);
+        assert!((edge - 0.1).abs() < 1e-6, "edge-adjacent neighbour: {edge}");
+        assert!(
+            (diagonal - 0.025).abs() < 1e-6,
+            "diagonal neighbour: {diagonal}"
+        );
+    }
+
+    /// A single cell seeded at the right edge (`half = 0`, so the seed
+    /// cannot itself wrap) must, after exactly one step, produce the same
+    /// closed-form 0.1 at its wrap-around neighbour on the left edge. A
+    /// clamping (non-toroidal) Laplacian would leave that cell at 0.
+    #[test]
+    fn wrap_is_immediate_across_the_edge() {
         let mut g = Grid::new(16, 16);
-        g.seed_rect(15, 8, 1);
-        for _ in 0..100 {
-            g.step(0.0545, 0.0620);
-        }
-        assert!(g.b_at(0, 8) > 0.001, "no wrap-around diffusion");
+        g.seed_rect(15, 8, 0);
+        g.step(0.0545, 0.0620);
+        let wrapped = g.b_at(0, 8);
+        assert!((wrapped - 0.1).abs() < 1e-6, "no wrap-around diffusion: {wrapped}");
     }
 
     #[test]
