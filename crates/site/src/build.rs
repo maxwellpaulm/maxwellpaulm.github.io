@@ -45,7 +45,16 @@ fn copy_tree(from: &Path, to: &Path, written: &mut Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
+/// Escapes XML metacharacters for use in text/attribute content. `&` must be
+/// replaced first, or the entities introduced for `<`/`>` would themselves
+/// be escaped again.
+fn escape_xml(s: &str) -> String {
+    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+}
+
 /// `User-agent: *\nAllow: /\n\nSitemap: {url}/sitemap.xml\n`
+///
+/// Plain text, not XML, so `site.url` is interpolated as-is here.
 fn robots_txt(site: &Site) -> String {
     format!("User-agent: *\nAllow: /\n\nSitemap: {}/sitemap.xml\n", site.url)
 }
@@ -57,8 +66,8 @@ fn sitemap_xml(site: &Site) -> String {
     for route in Route::ALL {
         urls.push_str(&format!(
             "  <url><loc>{}{}</loc></url>\n",
-            site.url,
-            route.path()
+            escape_xml(&site.url),
+            escape_xml(route.path())
         ));
     }
     format!(
@@ -162,6 +171,33 @@ mod tests {
         assert!(!sitemap.contains("/demos/"), "demos must not exist until a later bucket");
 
         std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn sitemap_escapes_xml_metacharacters_in_the_url() {
+        let site = Site {
+            name: "Test".to_string(),
+            location: "Nowhere".to_string(),
+            role: "Tester".to_string(),
+            lede: "Lede".to_string(),
+            bio: "Bio".to_string(),
+            credential: "Credential".to_string(),
+            description: "Description".to_string(),
+            url: "https://example.com/?a=1&b=2".to_string(),
+            projects_intro: "Intro".to_string(),
+            about: vec![],
+            work: vec![],
+        };
+
+        let sitemap = sitemap_xml(&site);
+        assert!(
+            !sitemap.contains("&b=2"),
+            "raw unescaped ampersand leaked into sitemap: {sitemap}"
+        );
+        assert!(
+            sitemap.contains("https://example.com/?a=1&amp;b=2"),
+            "expected escaped ampersand in <loc>: {sitemap}"
+        );
     }
 
     #[test]

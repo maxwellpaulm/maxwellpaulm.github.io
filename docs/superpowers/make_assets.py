@@ -3,10 +3,37 @@
 Text is emitted as vector paths, not <text>, so nothing depends on the
 viewer having Inter installed. Writes favicon.svg and og.svg into static/.
 
+This script produces SVGs only. It does NOT produce the PNGs that are
+actually shipped — static/og-image.png and static/apple-touch-icon.png.
+Those were rasterised by hand on macOS with `qlmanage` and `sips`, a step
+that lives only in this docstring, not in any script. If you change the
+favicon or OG card, regenerate the SVGs here first, then repeat the manual
+rasterisation below.
+
 Requires fontTools (with the brotli extra, needed to decode the source
-.woff2) — not part of the Rust build. Run manually when the wordmark or
-brand colours change; the generated assets are committed to the repo and
-are not regenerated as part of `cargo run -p site`.
+.woff2). These are not project dependencies — install them separately
+(e.g. `pip install fontTools[woff] brotli`) before running. Run manually
+when the wordmark or brand colours change; this script is never invoked
+by the build (`cargo run -p site`), and the generated/rasterised assets
+are committed to the repo as-is.
+
+Manual PNG rasterisation (macOS, requires Quick Look + `sips`):
+
+  og-image.png (1200x630):
+    Quick Look scales an SVG to fill a square thumbnail, so rendering the
+    630-tall card directly would get magnified and cropped. Instead, put
+    the card's content on a square 1200x1200 canvas, with everything
+    translated down by 285px to vertically center the original 630-tall
+    composition, and save that as og_square.svg. Then:
+      qlmanage -t -s 1200 -o <dir> og_square.svg
+      sips -c 630 1200 <dir>/og_square.png --out og-image.png
+
+  apple-touch-icon.png (180x180):
+    iOS ignores transparency and applies its own corner rounding, so the
+    icon needs an opaque background rather than the transparent favicon.
+    Put the favicon's paths over an opaque #FBFAF8 background and save
+    that as touch.svg. Then:
+      qlmanage -t -s 180 -o <dir> touch.svg
 """
 from pathlib import Path
 

@@ -7,7 +7,7 @@ use maud::{html, Markup, DOCTYPE};
 pub fn page(site: &Site, route: Route, title: &str, body: Markup) -> Markup {
     let canonical = format!("{}{}", site.url, route.path());
     // Built once and reused for <title> and og:title so the two can never disagree.
-    let full_title = format!("{title} · Paul Maxwell");
+    let full_title = format!("{title} · {}", site.name);
     let og_image = format!("{}/og-image.png", site.url);
     html! {
         (DOCTYPE)
@@ -67,7 +67,7 @@ mod tests {
         let out = page(&site, Route::About, "About", html! { p { "hello" } }).into_string();
         assert!(out.starts_with("<!DOCTYPE html>"), "missing doctype: {out}");
         assert!(out.contains(r#"<html lang="en">"#), "missing lang attribute");
-        assert!(out.contains("<title>About · Paul Maxwell</title>"));
+        assert!(out.contains(&format!("<title>About · {}</title>", site.name)));
         assert!(out.contains(r#"<meta name="viewport""#), "missing viewport meta");
         assert!(out.contains(r#"<link rel="stylesheet" href="/style.css">"#));
         assert!(out.contains("<p>hello</p>"), "body content not rendered");
@@ -142,11 +142,34 @@ mod tests {
     fn og_title_agrees_with_the_document_title() {
         let site = fixture_site();
         let out = page(&site, Route::Resume, "Resume", html! { p { "x" } }).into_string();
-        assert!(out.contains("<title>Resume · Paul Maxwell</title>"));
+        assert!(out.contains(&format!("<title>Resume · {}</title>", site.name)));
         assert!(out.contains(&format!(
             r#"<meta property="og:title" content="Resume · {}">"#,
             site.name
         )));
+    }
+
+    #[test]
+    fn title_and_og_title_come_from_site_name_not_a_hardcoded_literal() {
+        let mut site = fixture_site();
+        site.name = "Someone Else Entirely".to_string();
+        let out = page(&site, Route::About, "About", html! { p { "x" } }).into_string();
+
+        assert!(
+            out.contains("<title>About · Someone Else Entirely</title>"),
+            "title did not follow site.name: {out}"
+        );
+        assert!(
+            out.contains(r#"<meta property="og:title" content="About · Someone Else Entirely">"#),
+            "og:title did not follow site.name: {out}"
+        );
+        // The old hardcoded implementation would have produced this exact
+        // title regardless of site.name; its absence proves the name is no
+        // longer baked into the format string.
+        assert!(
+            !out.contains("<title>About · Paul Maxwell</title>"),
+            "title still built from a hardcoded literal, not site.name: {out}"
+        );
     }
 
     #[test]
