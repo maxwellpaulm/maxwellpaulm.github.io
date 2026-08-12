@@ -126,9 +126,9 @@ mod tests {
 
     #[test]
     fn rejects_a_dead_internal_link() {
-        let dir = scaffold("checks-dead", r#"<a href="/demos/">Demos</a>"#);
+        let dir = scaffold("checks-dead", r#"<a href="/nonexistent-page/">Nonexistent</a>"#);
         let err = verify(&dir, true).expect_err("dead link must fail the build");
-        assert!(err.to_string().contains("/demos/"), "got: {err}");
+        assert!(err.to_string().contains("/nonexistent-page/"), "got: {err}");
         std::fs::remove_dir_all(&dir).ok();
     }
 

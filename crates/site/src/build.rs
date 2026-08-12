@@ -91,6 +91,7 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
             Route::About => pages::about::render(&site),
             Route::Projects => pages::projects::render(&site),
             Route::Resume => pages::resume::render(&site),
+            Route::Demos => pages::demos::render(&site),
         };
         write(&out.join(route.output_path()), &markup.into_string(), &mut written)?;
     }
@@ -173,7 +174,7 @@ mod tests {
             let loc = format!("<loc>{}{}</loc>", site.url, route.path());
             assert!(sitemap.contains(&loc), "sitemap missing {loc}: {sitemap}");
         }
-        assert!(!sitemap.contains("/demos/"), "demos must not exist until a later bucket");
+        assert!(sitemap.contains("/demos/"), "demos must be in the sitemap from bucket 4 on");
 
         std::fs::remove_dir_all(&tmp).ok();
     }
