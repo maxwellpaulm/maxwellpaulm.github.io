@@ -2,10 +2,6 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::path::Path;
 
-// TODO(task-6): remove once About renders site.about; fields become live
-// across Tasks 5-6 (name/lede/bio/role/work/credential in 5, about in 6).
-// Only site.location is read today, by rail().
-#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Site {
