@@ -1,3 +1,4 @@
+use crate::checks;
 use crate::content::Site;
 use crate::{pages, route::Route, theme};
 use anyhow::{Context, Result};
@@ -67,6 +68,8 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     if let Ok(cname) = std::fs::read_to_string(root.join("CNAME")) {
         write(&out.join("CNAME"), &cname, &mut written)?;
     }
+
+    checks::verify(out, strict)?;
 
     Ok(written)
 }

@@ -1,4 +1,5 @@
 mod build;
+mod checks;
 mod components;
 mod content;
 mod pages;
