@@ -1,0 +1,42 @@
+name = "Paul Maxwell"
+location = "Washington, DC"
+role = "Lead Software Engineer / P-1 AI / 2025 —"
+lede = "I build the infrastructure that gets AI systems safely into production — deployment, observability, and the trust boundaries in between."
+bio = "Currently leading platform work at P-1 AI, where our engineering agent runs inside customers' own cloud environments so their data never has to leave. Before that: fraud prevention at Amazon, credit underwriting infrastructure at Ampla, distributed portfolio construction at BlackRock."
+credential = "NSA Codebreaker Challenge — one of 24 finishers out of more than 3,300 participants, 2023."
+
+about = [
+  "I work at the layer where a system meets production and has to be trusted. That has meant bring-your-own-cloud deployment for an AI engineering agent, zero-trust gateways that keep real credentials out of agent sandboxes, real-time fraud detection, and underwriting controls that have to be auditable by people who are not engineers.",
+  "I hold a Master's in Computer Science from Georgia Tech and a BSE from the University of Michigan, and I am a CFA charterholder — an unusual pairing that turns out to be useful anywhere software meets capital.",
+  "Outside of work I do security challenges; I was one of 24 finishers of the NSA Codebreaker Challenge out of more than 3,300 participants in 2023.",
+]
+
+[[work]]
+title = "Archie BYOC Platform"
+org = "P-1 AI"
+year = "2025"
+summary = "Deploys an engineering AI agent into customer-controlled cloud; each install assembles from independently versioned components."
+
+[[work]]
+title = "Zero-Trust Agent Gateway"
+org = "P-1 AI"
+year = "2025"
+summary = "A phantom-token pattern — agent code in ephemeral sandboxes holds only opaque, request-scoped tokens; the gateway keeps every real credential."
+
+[[work]]
+title = "Duplicate-Invoice Detection"
+org = "Amazon"
+year = "2024"
+summary = "Real-time service bursting to 500 TPS with pluggable rule and ML engines, inside a suite blocking $1B+ in fraud annually."
+
+[[work]]
+title = "EU Compliance Ingestion"
+org = "Amazon"
+year = "2024"
+summary = "Processes roughly one billion book titles per year, extracting required metadata and storing compliance artifacts at 500 TPS."
+
+[[work]]
+title = "Transaction Tagging Engine"
+org = "Ampla"
+year = "2022"
+summary = "Re-implemented with Aho–Corasick; runtime went from hours to 90 seconds."
