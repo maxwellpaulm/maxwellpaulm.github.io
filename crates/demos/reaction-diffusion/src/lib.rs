@@ -25,10 +25,12 @@ impl Simulation {
         }
     }
 
+    /// Grid width in cells.
     pub fn width(&self) -> usize {
         self.grid.width()
     }
 
+    /// Grid height in cells.
     pub fn height(&self) -> usize {
         self.grid.height()
     }
@@ -46,18 +48,29 @@ impl Simulation {
         paint(&self.grid, palette, &mut self.pixels);
     }
 
+    /// Seed a square of reagent B centered at `(x, y)` with half-width `half`.
     pub fn seed(&mut self, x: usize, y: usize, half: usize) {
         self.grid.seed_rect(x, y, half);
     }
 
+    /// Clear the grid back to its initial (unseeded) state.
     pub fn reset(&mut self) {
         self.grid.reset();
     }
 
+    /// Pointer to the RGBA pixel buffer in wasm linear memory.
+    ///
+    /// The caller MUST rebuild its typed-array view from this pointer on
+    /// every frame and never cache it: if wasm memory grows, the backing
+    /// `ArrayBuffer` is detached and replaced, and a retained view reads
+    /// garbage or throws. `pixels` is allocated once and never resized, so
+    /// growth is unlikely here — but the rule costs nothing to follow and
+    /// the failure mode is silent.
     pub fn pixels_ptr(&self) -> *const u8 {
         self.pixels.as_ptr()
     }
 
+    /// Length in bytes of the buffer at `pixels_ptr`: `width * height * 4`.
     pub fn pixels_len(&self) -> usize {
         self.pixels.len()
     }
