@@ -18,8 +18,10 @@ pub fn render(site: &Site, pages: &[String], text: &str) -> Markup {
             a href=(RESUME_PDF) download { "Download PDF" }
         }
 
-        @for (i, page) in pages.iter().enumerate() {
-            img .resume-page src=(page) alt=(format!("Resume page {} of {}", i + 1, pages.len()));
+        // alt="" is deliberate: the images are decorative once the hidden
+        // text layer below carries the actual content for assistive tech.
+        @for page in pages {
+            img .resume-page src=(page) alt="";
         }
 
         @if !text.is_empty() {

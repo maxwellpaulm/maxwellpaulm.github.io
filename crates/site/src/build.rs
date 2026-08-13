@@ -101,7 +101,9 @@ fn resume_artifacts(root: &Path) -> Result<(Vec<String>, String)> {
         .map(|n| format!("/resume/{n}"))
         .collect();
     pages.sort();
-    let text = std::fs::read_to_string(dir.join("resume.txt")).unwrap_or_default();
+    // Dotfile so `copy_tree`'s existing dotfile exclusion keeps it out of the
+    // published output for free — no new exclusion rule needed.
+    let text = std::fs::read_to_string(dir.join(".resume.txt")).unwrap_or_default();
     Ok((pages, text))
 }
 
@@ -412,12 +414,53 @@ mod tests {
         for page in &pages {
             assert!(html.contains(page.as_str()), "resume page {page} not referenced");
         }
+        assert_eq!(
+            html.matches("resume-page").count(),
+            pages.len(),
+            "rendered image count must match discovered pages"
+        );
         assert!(
             html.contains("/assets/paul_maxwell_resume.pdf"),
             "download link missing from the built page"
         );
         assert!(!html.contains("<object"), "the old PDF object embed should be gone");
         std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn resume_artifacts_returns_pages_in_order_regardless_of_directory_order() {
+        let dir = std::env::temp_dir().join("resume-artifacts-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("static/resume")).unwrap();
+        // Created deliberately out of order — read_dir order is not guaranteed.
+        for n in ["page-03.svg", "page-01.svg", "page-02.svg"] {
+            std::fs::write(dir.join("static/resume").join(n), "<svg/>").unwrap();
+        }
+        std::fs::write(dir.join("static/resume/.resume.txt"), "Aho-Corasick").unwrap();
+
+        let (pages, text) = resume_artifacts(&dir).unwrap();
+        assert_eq!(
+            pages,
+            vec![
+                "/resume/page-01.svg".to_string(),
+                "/resume/page-02.svg".to_string(),
+                "/resume/page-03.svg".to_string(),
+            ],
+            "pages must come back sorted by page number"
+        );
+        assert_eq!(text, "Aho-Corasick");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn resume_artifacts_is_empty_when_nothing_has_been_rendered() {
+        let dir = std::env::temp_dir().join("resume-artifacts-empty-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let (pages, text) = resume_artifacts(&dir).unwrap();
+        assert!(pages.is_empty());
+        assert!(text.is_empty());
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

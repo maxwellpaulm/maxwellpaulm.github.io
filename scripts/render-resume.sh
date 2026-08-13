@@ -29,7 +29,7 @@ for p in $(seq 1 "$PAGES"); do
     pdftocairo -svg -f "$p" -l "$p" "$PDF" "$OUT/$name"
 done
 
-pdftotext -layout "$PDF" "$OUT/resume.txt"
+pdftotext -layout "$PDF" "$OUT/.resume.txt"
 
 echo "Rendered $PAGES page(s) to $OUT:"
 ls -la "$OUT"
