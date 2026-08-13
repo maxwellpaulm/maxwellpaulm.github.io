@@ -42,6 +42,15 @@ impl Grid {
         self.b[y * self.width + x]
     }
 
+    // Only `reset_restores_the_initial_state` needs this — production code
+    // never reads A back out, only B (`paint` renders B; `step` reads/writes
+    // A internally). Gating it behind `cfg(test)` keeps it from being flagged
+    // as dead code in a real build while still existing for the test to call.
+    #[cfg(test)]
+    pub fn a_at(&self, x: usize, y: usize) -> f32 {
+        self.a[y * self.width + x]
+    }
+
     pub fn reset(&mut self) {
         self.a.fill(1.0);
         self.b.fill(0.0);
@@ -205,6 +214,7 @@ mod tests {
         for y in 0..16 {
             for x in 0..16 {
                 assert_eq!(g.b_at(x, y), 0.0, "reset left B behind at ({x},{y})");
+                assert_eq!(g.a_at(x, y), 1.0, "reset left A depleted at ({x},{y})");
             }
         }
     }
