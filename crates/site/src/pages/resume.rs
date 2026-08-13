@@ -16,44 +16,32 @@ pub struct ResumePage {
     pub height: u32,
 }
 
-/// Splits normalised extracted text on blank lines into paragraph blocks.
-/// `.visually-hidden` sets `white-space: nowrap`, which collapses newlines
-/// in a single text node — splitting into `<p>` elements is what gives the
-/// accessibility tree headings and boundaries to skim by.
-fn paragraphs(text: &str) -> Vec<&str> {
-    text.split("\n\n").map(str::trim).filter(|p| !p.is_empty()).collect()
-}
-
-/// Renders the resume as inline vector pages with a hidden text layer.
+/// Renders the resume as inline vector pages.
 ///
-/// `pages` holds each page in order with its intrinsic size; `text` is the
-/// normalised plain-text extraction. With no pages — a local build that has
-/// not run `scripts/render-resume.sh` — the page degrades to the download
+/// `pages` holds each page in order with its intrinsic size. With no pages —
+/// a local build that has not run `scripts/render-resume.sh` — the page
+/// degrades to the download link.
+///
+/// There is no machine-readable text layer: PDF text extraction produced
+/// unstructured, poorly-segmented output not worth shipping. Each image
+/// instead carries a descriptive alt naming its page number, so assistive
+/// tech at least announces the resume's presence and the adjacent download
 /// link.
-pub fn render(site: &Site, pages: &[ResumePage], text: &str) -> Markup {
+pub fn render(site: &Site, pages: &[ResumePage]) -> Markup {
+    let total = pages.len();
     let main = html! {
         h1 { "Resume" }
         p .prose {
             a href=(RESUME_PDF) download { "Download PDF" }
         }
 
-        // alt="" is deliberate: the images are decorative once the hidden
-        // text layer below carries the actual content for assistive tech.
         // width/height are the SVG's own declared dimensions — the browser
         // derives the intrinsic aspect ratio from them and reserves the
         // correct box before the file loads, instead of collapsing to zero
         // height and jumping the page.
-        @for page in pages {
-            img .resume-page src=(page.url) width=(page.width) height=(page.height) alt="";
-        }
-
-        @if !text.is_empty() {
-            div .visually-hidden {
-                h2 { "Resume, text version" }
-                @for paragraph in paragraphs(text) {
-                    p { (paragraph) }
-                }
-            }
+        @for (i, page) in pages.iter().enumerate() {
+            img .resume-page src=(page.url) width=(page.width) height=(page.height)
+                alt=(format!("Resume, page {} of {total}", i + 1));
         }
     };
     shell::layout(site, Route::Resume, "Resume", main)
@@ -72,7 +60,7 @@ mod tests {
 
     #[test]
     fn resume_shows_one_image_per_page_in_order() {
-        let out = render(&crate::content::fixture_site(), &pages(), "Paul Maxwell").into_string();
+        let out = render(&crate::content::fixture_site(), &pages()).into_string();
         let first = out.find("/resume/page-01.svg").expect("page 1 missing");
         let second = out.find("/resume/page-02.svg").expect("page 2 missing");
         assert!(first < second, "pages rendered out of order");
@@ -84,7 +72,7 @@ mod tests {
         let mut pages = pages();
         pages[0].width = 612;
         pages[0].height = 792;
-        let out = render(&crate::content::fixture_site(), &pages, "text").into_string();
+        let out = render(&crate::content::fixture_site(), &pages).into_string();
         assert!(
             out.contains(r#"src="/resume/page-01.svg" width="612" height="792""#),
             "img missing its parsed width/height attributes: {out}"
@@ -93,44 +81,28 @@ mod tests {
 
     #[test]
     fn resume_keeps_the_pdf_download() {
-        let out = render(&crate::content::fixture_site(), &pages(), "text").into_string();
+        let out = render(&crate::content::fixture_site(), &pages()).into_string();
         assert!(out.contains(&format!(r#"href="{RESUME_PDF}""#)), "download link missing");
         assert!(out.contains("download"), "download attribute missing");
     }
 
     #[test]
-    fn resume_embeds_the_extracted_text_for_screen_readers() {
-        let out = render(&crate::content::fixture_site(), &pages(), "Aho-Corasick").into_string();
-        assert!(out.contains("visually-hidden"), "hidden text container missing");
-        assert!(out.contains("Aho-Corasick"), "extracted text not embedded");
-    }
-
-    #[test]
-    fn resume_hidden_text_is_split_into_paragraphs_behind_a_heading() {
-        let text = "Paul Maxwell\nWashington, DC\n\nEXPERIENCE\nP-1 AI, Remote\n\nEDUCATION\nGeorgia Tech";
-        let out = render(&crate::content::fixture_site(), &pages(), text).into_string();
+    fn resume_images_carry_a_meaningful_alt_naming_the_page_number() {
+        let out = render(&crate::content::fixture_site(), &pages()).into_string();
         assert!(
-            out.contains("<h2>Resume, text version</h2>"),
-            "missing the navigable heading: {out}"
+            out.contains(r#"alt="Resume, page 1 of 2""#),
+            "page 1 alt missing or empty: {out}"
         );
-        assert_eq!(
-            out.matches("<p>").count(),
-            3,
-            "expected one <p> per blank-line-separated block: {out}"
+        assert!(
+            out.contains(r#"alt="Resume, page 2 of 2""#),
+            "page 2 alt missing or empty: {out}"
         );
     }
 
     #[test]
     fn resume_without_rendered_pages_still_offers_the_download() {
-        let out = render(&crate::content::fixture_site(), &[], "").into_string();
+        let out = render(&crate::content::fixture_site(), &[]).into_string();
         assert!(out.contains(&format!(r#"href="{RESUME_PDF}""#)), "download link missing");
         assert_eq!(out.matches("<img").count(), 0, "no pages should render no images");
-    }
-
-    #[test]
-    fn extracted_text_is_escaped_not_injected() {
-        let out = render(&crate::content::fixture_site(), &pages(), "a <script>x</script> b").into_string();
-        assert!(!out.contains("<script>x</script>"), "raw markup leaked from the PDF text");
-        assert!(out.contains("&lt;script&gt;"), "text should be HTML-escaped");
     }
 }

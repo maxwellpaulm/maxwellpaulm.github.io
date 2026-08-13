@@ -1,7 +1,7 @@
 use crate::checks;
 use crate::content::Site;
 use crate::pages::resume::ResumePage;
-use crate::{pages, route::Route, text, theme};
+use crate::{pages, route::Route, theme};
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 
@@ -127,13 +127,11 @@ fn svg_dimensions(svg: &str) -> Result<(u32, u32)> {
     Ok((width, height))
 }
 
-/// Finds the rendered resume pages and extracted text, if they exist.
-/// Pages come back in page order; text is normalised (ligatures expanded,
-/// split small-caps headings joined, trailing form feed stripped).
-fn resume_artifacts(root: &Path) -> Result<(Vec<ResumePage>, String)> {
+/// Finds the rendered resume pages, if any exist, in page order.
+fn resume_artifacts(root: &Path) -> Result<Vec<ResumePage>> {
     let dir = root.join("static/resume");
     if !dir.exists() {
-        return Ok((Vec::new(), String::new()));
+        return Ok(Vec::new());
     }
     let mut names: Vec<String> = std::fs::read_dir(&dir)?
         .filter_map(|e| e.ok())
@@ -152,10 +150,7 @@ fn resume_artifacts(root: &Path) -> Result<(Vec<ResumePage>, String)> {
         pages.push(ResumePage { url: format!("/resume/{name}"), width, height });
     }
 
-    // Dotfile so `copy_tree`'s existing dotfile exclusion keeps it out of the
-    // published output for free — no new exclusion rule needed.
-    let raw_text = std::fs::read_to_string(dir.join(".resume.txt")).unwrap_or_default();
-    Ok((pages, text::normalize(&raw_text)))
+    Ok(pages)
 }
 
 /// Renders the whole site into `out`. With `strict`, a missing resume PDF is a
@@ -165,7 +160,7 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     let site = Site::load(&root.join(CONTENT))?;
     let mut written = Vec::new();
 
-    let (resume_pages, resume_text) = resume_artifacts(root)?;
+    let resume_pages = resume_artifacts(root)?;
     if resume_pages.is_empty() {
         let msg = "resume pages not rendered — run scripts/render-resume.sh";
         if strict {
@@ -179,7 +174,7 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
             Route::Index => pages::index::render(&site),
             Route::About => pages::about::render(&site),
             Route::Projects => pages::projects::render(&site),
-            Route::Resume => pages::resume::render(&site, &resume_pages, &resume_text),
+            Route::Resume => pages::resume::render(&site, &resume_pages),
             Route::Demos => pages::demos::render(&site),
         };
         write(&out.join(route.output_path()), &markup.into_string(), &mut written)?;
@@ -461,7 +456,7 @@ mod tests {
         build(Path::new("../.."), &tmp, false).expect("build succeeds");
 
         let html = std::fs::read_to_string(tmp.join("resume/index.html")).unwrap();
-        let (pages, _) = resume_artifacts(Path::new("../..")).unwrap();
+        let pages = resume_artifacts(Path::new("../..")).unwrap();
         for page in &pages {
             assert!(html.contains(page.url.as_str()), "resume page {} not referenced", page.url);
         }
@@ -500,16 +495,14 @@ mod tests {
         for n in ["page-03.svg", "page-01.svg", "page-02.svg"] {
             write_svg(&dir.join("static/resume").join(n), "612pt", "792pt");
         }
-        std::fs::write(dir.join("static/resume/.resume.txt"), "Aho-Corasick").unwrap();
 
-        let (pages, text) = resume_artifacts(&dir).unwrap();
+        let pages = resume_artifacts(&dir).unwrap();
         let urls: Vec<&str> = pages.iter().map(|p| p.url.as_str()).collect();
         assert_eq!(
             urls,
             vec!["/resume/page-01.svg", "/resume/page-02.svg", "/resume/page-03.svg"],
             "pages must come back sorted by page number"
         );
-        assert_eq!(text, "Aho-Corasick");
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -518,9 +511,8 @@ mod tests {
         let dir = std::env::temp_dir().join("resume-artifacts-empty-test");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
-        let (pages, text) = resume_artifacts(&dir).unwrap();
+        let pages = resume_artifacts(&dir).unwrap();
         assert!(pages.is_empty());
-        assert!(text.is_empty());
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -531,7 +523,7 @@ mod tests {
         std::fs::create_dir_all(dir.join("static/resume")).unwrap();
         write_svg(&dir.join("static/resume/page-01.svg"), "612pt", "792pt");
 
-        let (pages, _) = resume_artifacts(&dir).unwrap();
+        let pages = resume_artifacts(&dir).unwrap();
         assert_eq!(pages.len(), 1);
         assert_eq!(pages[0].width, 612, "width must be parsed from the svg root, ignoring the unit");
         assert_eq!(pages[0].height, 792, "height must be parsed from the svg root, ignoring the unit");

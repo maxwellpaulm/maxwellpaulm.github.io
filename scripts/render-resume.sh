@@ -1,7 +1,6 @@
 #!/bin/bash
-# Renders the resume PDF to one SVG per page plus a plain-text extraction,
-# for inline display on /resume/. Run after scripts/fetch-resume.sh and
-# before `cargo run -p site`.
+# Renders the resume PDF to one SVG per page for inline display on
+# /resume/. Run after scripts/fetch-resume.sh and before `cargo run -p site`.
 #
 # Vector rather than raster: the SVG is ~69 KB gzipped and stays crisp at
 # any zoom, where a 150 dpi PNG is ~199 KB and goes soft.
@@ -28,8 +27,6 @@ for p in $(seq 1 "$PAGES"); do
     printf -v name "page-%02d.svg" "$p"
     pdftocairo -svg -f "$p" -l "$p" "$PDF" "$OUT/$name"
 done
-
-pdftotext -layout "$PDF" "$OUT/.resume.txt"
 
 echo "Rendered $PAGES page(s) to $OUT:"
 ls -la "$OUT"
