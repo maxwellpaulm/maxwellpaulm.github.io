@@ -187,17 +187,6 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
   border: 1px solid var(--rule);
   background: #FFFFFF;
 }}
-.visually-hidden {{
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}}
 
 /* The rail becomes a top bar before the grid gets cramped. */
 @media (max-width: 640px) {{
@@ -273,14 +262,11 @@ mod tests {
     }
 
     #[test]
-    fn resume_page_classes_used_in_markup_are_defined_here() {
-        // pages/resume.rs writes `.resume-page` and `.visually-hidden` with
-        // nothing tying them to this stylesheet. If `.visually-hidden` were
-        // ever dropped here, the failure would be loud and public — five
-        // kilobytes of resume text rendered as visible body copy.
+    fn resume_page_class_used_in_markup_is_defined_here() {
+        // pages/resume.rs writes `.resume-page` with nothing tying it to
+        // this stylesheet.
         let css = stylesheet();
         assert!(css.contains(".resume-page {"), "stylesheet missing .resume-page: {css}");
-        assert!(css.contains(".visually-hidden {"), "stylesheet missing .visually-hidden: {css}");
     }
 
     #[test]
