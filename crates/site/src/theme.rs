@@ -196,12 +196,12 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
   .layout {{ grid-template-columns: 1fr; }}
   .rail {{
     border-right: 0; border-bottom: 1px solid var(--rule);
-    flex-direction: row; align-items: center; justify-content: space-between;
+    flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between;
     gap: calc(var(--space) * 2); padding: calc(var(--space) * 2);
   }}
   .rail nav {{ flex-direction: row; gap: calc(var(--space) * 2); flex-wrap: wrap; }}
-  .rail-foot {{ margin-top: 0; }}
-  .rail-links {{ flex-direction: row; gap: calc(var(--space) * 1.5); margin-top: 0; }}
+  .rail-foot {{ margin-top: 0; min-width: 0; }}
+  .rail-links {{ flex-direction: row; flex-wrap: wrap; gap: calc(var(--space) * 1.5); margin-top: 0; }}
   main {{ padding: calc(var(--space) * 4) calc(var(--space) * 2.5); }}
   h1 {{ font-size: 38px; }}
   .item {{ grid-template-columns: 1fr; gap: 4px; }}
@@ -282,6 +282,27 @@ mod tests {
         assert!(
             css.contains(".rail-links { flex-direction: row;"),
             "stylesheet missing the collapsed top-bar .rail-links row variant: {css}"
+        );
+    }
+
+    #[test]
+    fn collapsed_rail_wraps_as_a_group_instead_of_overflowing() {
+        // Below 640px the rail is a flex row (PM mark, nav, .rail-foot) laid
+        // out with `justify-content: space-between`. If that row can't wrap
+        // as a group, long-enough content in any one child pushes
+        // `.rail-foot` past the right edge and the page scrolls
+        // horizontally, which the site must never do. `.rail` needs
+        // `flex-wrap: wrap` so the group can drop `.rail-foot` to its own
+        // line, and `.rail-foot` needs `min-width: 0` so it isn't held to
+        // its content's intrinsic width when the group doesn't wrap.
+        let css = stylesheet();
+        assert!(
+            css.contains("flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between;"),
+            "stylesheet missing flex-wrap on the collapsed .rail so it can wrap as a group: {css}"
+        );
+        assert!(
+            css.contains(".rail-foot { margin-top: 0; min-width: 0; }"),
+            "stylesheet missing min-width: 0 on the collapsed .rail-foot: {css}"
         );
     }
 
