@@ -35,6 +35,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.RESUME_GITHUB_TOKEN }}
       run: ./scripts/fetch-resume.sh
 
+    - name: Install poppler
+      run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+    - name: Render resume
+      run: ./scripts/render-resume.sh
+
     - name: Install wasm-bindgen-cli
       run: cargo install wasm-bindgen-cli --version 0.2.127 --locked
 
@@ -49,6 +55,12 @@ jobs:
         test -f dist/demos/reaction-diffusion/reaction_diffusion_bg.wasm
         test -f dist/demos/reaction-diffusion/reaction_diffusion.js
         ls -la dist/demos/reaction-diffusion/
+
+    - name: Verify resume shipped
+      run: |
+        test -f dist/resume/page-01.svg
+        test -f dist/assets/paul_maxwell_resume.pdf
+        ls -la dist/resume/
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
