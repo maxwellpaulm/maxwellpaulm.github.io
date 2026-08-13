@@ -87,6 +87,24 @@ fn sitemap_xml(site: &Site, extra: &[&str]) -> String {
     )
 }
 
+/// Finds the rendered resume pages and extracted text, if they exist.
+/// Returns rooted URLs in page order.
+fn resume_artifacts(root: &Path) -> Result<(Vec<String>, String)> {
+    let dir = root.join("static/resume");
+    if !dir.exists() {
+        return Ok((Vec::new(), String::new()));
+    }
+    let mut pages: Vec<String> = std::fs::read_dir(&dir)?
+        .filter_map(|e| e.ok())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .filter(|n| n.starts_with("page-") && n.ends_with(".svg"))
+        .map(|n| format!("/resume/{n}"))
+        .collect();
+    pages.sort();
+    let text = std::fs::read_to_string(dir.join("resume.txt")).unwrap_or_default();
+    Ok((pages, text))
+}
+
 /// Renders the whole site into `out`. With `strict`, a missing resume PDF is a
 /// hard error; without it, a warning — so local builds work without the token
 /// that CI uses to fetch the private release.
@@ -94,12 +112,21 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     let site = Site::load(&root.join(CONTENT))?;
     let mut written = Vec::new();
 
+    let (resume_pages, resume_text) = resume_artifacts(root)?;
+    if resume_pages.is_empty() {
+        let msg = "resume pages not rendered — run scripts/render-resume.sh";
+        if strict {
+            anyhow::bail!("{msg}");
+        }
+        eprintln!("warning: {msg} (non-strict build, continuing)");
+    }
+
     for route in Route::ALL {
         let markup = match route {
             Route::Index => pages::index::render(&site),
             Route::About => pages::about::render(&site),
             Route::Projects => pages::projects::render(&site),
-            Route::Resume => pages::resume::render(&site),
+            Route::Resume => pages::resume::render(&site, &resume_pages, &resume_text),
             Route::Demos => pages::demos::render(&site),
         };
         write(&out.join(route.output_path()), &markup.into_string(), &mut written)?;
@@ -371,6 +398,25 @@ mod tests {
             "demo page must load the wasm demo: {demo_html}"
         );
 
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn build_embeds_the_rendered_resume_pages() {
+        let tmp = std::env::temp_dir().join("site-resume-test");
+        let _ = std::fs::remove_dir_all(&tmp);
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+
+        let html = std::fs::read_to_string(tmp.join("resume/index.html")).unwrap();
+        let (pages, _) = resume_artifacts(Path::new("../..")).unwrap();
+        for page in &pages {
+            assert!(html.contains(page.as_str()), "resume page {page} not referenced");
+        }
+        assert!(
+            html.contains("/assets/paul_maxwell_resume.pdf"),
+            "download link missing from the built page"
+        );
+        assert!(!html.contains("<object"), "the old PDF object embed should be gone");
         std::fs::remove_dir_all(&tmp).ok();
     }
 
