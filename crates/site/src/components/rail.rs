@@ -20,6 +20,10 @@ pub fn rail(site: &Site, current: Option<Route>) -> Markup {
             }
             div .rail-foot {
                 div .mono { (site.location) }
+                div .rail-links {
+                    a href=(site.github) rel="me" { "GitHub" }
+                    a href=(site.linkedin) rel="me" { "LinkedIn" }
+                }
                 button type="button" .theme-toggle id="theme-toggle" aria-label="Toggle dark mode" aria-pressed="false" {
                     "Dark"
                 }
@@ -85,6 +89,30 @@ mod tests {
     fn rail_shows_location() {
         let out = rail(&site(), Some(Route::Index)).into_string();
         assert!(out.contains("Washington, DC"));
+    }
+
+    #[test]
+    fn rail_links_to_github_and_linkedin() {
+        let out = rail(&site(), Some(Route::Index)).into_string();
+        assert!(
+            out.contains(r#"<div class="rail-links">"#),
+            "missing rail-links wrapper: {out}"
+        );
+        assert!(
+            out.contains(r#"href="https://github.com/maxwellpaulm""#),
+            "missing github href: {out}"
+        );
+        assert!(
+            out.contains(r#"href="https://www.linkedin.com/in/maxwellpaulm""#),
+            "missing linkedin href: {out}"
+        );
+        assert!(out.contains(">GitHub<"), "expected visible link text \"GitHub\": {out}");
+        assert!(out.contains(">LinkedIn<"), "expected visible link text \"LinkedIn\": {out}");
+        assert_eq!(
+            out.matches(r#"rel="me""#).count(),
+            2,
+            "both github and linkedin links should carry rel=\"me\": {out}"
+        );
     }
 
     #[test]

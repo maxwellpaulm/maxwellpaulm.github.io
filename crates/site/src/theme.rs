@@ -138,6 +138,9 @@ a:hover {{ text-decoration: underline; }}
 .rail nav a[aria-current="page"] {{ color: var(--ink); font-weight: 500; }}
 .rail nav a[aria-current="page"]::before {{ content: "— "; color: var(--accent); }}
 .rail-foot {{ margin-top: auto; }}
+.rail-links {{ display: flex; flex-direction: column; gap: 4px; margin-top: calc(var(--space) * 1.5); }}
+.rail-links a {{ font-size: 12px; color: var(--muted); transition: color var(--motion) ease; }}
+.rail-links a:hover {{ color: var(--ink); text-decoration: none; }}
 .theme-toggle {{
   margin-top: calc(var(--space) * 1.5);
   font-family: var(--font-mono);
@@ -198,6 +201,7 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
   }}
   .rail nav {{ flex-direction: row; gap: calc(var(--space) * 2); flex-wrap: wrap; }}
   .rail-foot {{ margin-top: 0; }}
+  .rail-links {{ flex-direction: row; gap: calc(var(--space) * 1.5); margin-top: 0; }}
   main {{ padding: calc(var(--space) * 4) calc(var(--space) * 2.5); }}
   h1 {{ font-size: 38px; }}
   .item {{ grid-template-columns: 1fr; gap: 4px; }}
@@ -267,6 +271,18 @@ mod tests {
         // this stylesheet.
         let css = stylesheet();
         assert!(css.contains(".resume-page {"), "stylesheet missing .resume-page: {css}");
+    }
+
+    #[test]
+    fn rail_links_class_used_in_markup_is_defined_here() {
+        // components/rail.rs writes `.rail-links` with nothing tying it to
+        // this stylesheet, including the collapsed-top-bar row layout.
+        let css = stylesheet();
+        assert!(css.contains(".rail-links {"), "stylesheet missing .rail-links: {css}");
+        assert!(
+            css.contains(".rail-links { flex-direction: row;"),
+            "stylesheet missing the collapsed top-bar .rail-links row variant: {css}"
+        );
     }
 
     #[test]
