@@ -4,10 +4,17 @@ pub enum Route {
     About,
     Projects,
     Resume,
+    Demos,
 }
 
 impl Route {
-    pub const ALL: [Route; 4] = [Route::Index, Route::About, Route::Projects, Route::Resume];
+    pub const ALL: [Route; 5] = [
+        Route::Index,
+        Route::About,
+        Route::Projects,
+        Route::Resume,
+        Route::Demos,
+    ];
 
     pub fn path(&self) -> &'static str {
         match self {
@@ -15,6 +22,7 @@ impl Route {
             Route::About => "/about/",
             Route::Projects => "/projects/",
             Route::Resume => "/resume/",
+            Route::Demos => "/demos/",
         }
     }
 
@@ -24,6 +32,7 @@ impl Route {
             Route::About => "about/index.html",
             Route::Projects => "projects/index.html",
             Route::Resume => "resume/index.html",
+            Route::Demos => "demos/index.html",
         }
     }
 
@@ -33,6 +42,7 @@ impl Route {
             Route::About => "About",
             Route::Projects => "Projects",
             Route::Resume => "Resume",
+            Route::Demos => "Demos",
         }
     }
 }
@@ -43,7 +53,7 @@ mod tests {
 
     #[test]
     fn every_route_has_a_rooted_path_and_html_output() {
-        assert_eq!(Route::ALL.len(), 4, "Demos must not exist until bucket 4");
+        assert_eq!(Route::ALL.len(), 5);
         for r in Route::ALL {
             assert!(r.path().starts_with('/'), "{:?} path must be rooted", r);
             assert!(r.output_path().ends_with(".html"), "{:?} bad output", r);
@@ -57,5 +67,12 @@ mod tests {
         assert_eq!(Route::Index.output_path(), "index.html");
         assert_eq!(Route::About.path(), "/about/");
         assert_eq!(Route::About.output_path(), "about/index.html");
+    }
+
+    #[test]
+    fn demos_is_routed() {
+        assert_eq!(Route::Demos.path(), "/demos/");
+        assert_eq!(Route::Demos.output_path(), "demos/index.html");
+        assert_eq!(Route::Demos.label(), "Demos");
     }
 }

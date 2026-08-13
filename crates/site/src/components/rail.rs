@@ -66,7 +66,7 @@ mod tests {
             out.contains(r#"href="/about/" aria-current="page""#),
             "current page not marked: {out}"
         );
-        assert!(!out.contains("Demos"), "Demos must not be linked in bucket 1");
+        assert!(out.contains("Demos"), "Demos must be linked from bucket 4 on");
     }
 
     #[test]

@@ -20,6 +20,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: clippy
+        targets: wasm32-unknown-unknown
 
     - uses: Swatinem/rust-cache@v2
 
@@ -34,8 +35,20 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.RESUME_GITHUB_TOKEN }}
       run: ./scripts/fetch-resume.sh
 
+    - name: Install wasm-bindgen-cli
+      run: cargo install wasm-bindgen-cli --version 0.2.127 --locked
+
+    - name: Build WebAssembly
+      run: ./scripts/build-wasm.sh
+
     - name: Build site
       run: cargo run -p site -- --strict
+
+    - name: Verify wasm shipped
+      run: |
+        test -f dist/demos/reaction-diffusion/reaction_diffusion_bg.wasm
+        test -f dist/demos/reaction-diffusion/reaction_diffusion.js
+        ls -la dist/demos/reaction-diffusion/
 
     - name: Setup Pages
       uses: actions/configure-pages@v4

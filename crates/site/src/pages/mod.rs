@@ -1,4 +1,6 @@
 pub mod about;
+pub mod demo_reaction_diffusion;
+pub mod demos;
 pub mod index;
 pub mod not_found;
 pub mod projects;
