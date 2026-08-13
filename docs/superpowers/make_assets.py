@@ -123,9 +123,9 @@ def og_card():
 
     p, _ = text_path("Paul Maxwell", 600, name_size, M, 300, -0.035, INK)
     parts.append(p)
-    p, _ = text_path("I build the infrastructure that gets AI systems", 350, lede_size, M, 375, 0, MUTED)
+    p, _ = text_path("Software engineer. I build backend systems —", 350, lede_size, M, 375, 0, MUTED)
     parts.append(p)
-    p, _ = text_path("safely into production.", 350, lede_size, M, 420, 0, MUTED)
+    p, _ = text_path("platforms, data pipelines, and the services around them.", 350, lede_size, M, 420, 0, MUTED)
     parts.append(p)
     p, _ = text_path("LEAD SOFTWARE ENGINEER / P-1 AI", 500, meta_size, M, H - 96, 0.14, INK)
     parts.append(p)
