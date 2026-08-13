@@ -52,8 +52,8 @@ mod tests {
         assert!(out.contains(r#"rel="me""#), "profile links should carry rel=\"me\": {out}");
         assert_eq!(
             out.matches(r#"rel="me""#).count(),
-            2,
-            "both github and linkedin links should carry rel=\"me\": {out}"
+            4,
+            "both the Elsewhere line and the site-wide rail should carry two rel=\"me\" links each: {out}"
         );
     }
 }
