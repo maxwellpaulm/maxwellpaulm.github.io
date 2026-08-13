@@ -12,7 +12,7 @@ pub fn render(site: &Site) -> Markup {
             "The whole simulation runs in Rust compiled to WebAssembly — click the canvas to disturb it."
         }
 
-        canvas #rd-canvas .rd-canvas {}
+        canvas #rd-canvas .rd-canvas aria-label="Reaction-diffusion simulation" {}
 
         div .rd-controls {
             button #rd-toggle .theme-toggle type="button" { "Pause" }
@@ -44,6 +44,10 @@ mod tests {
         assert!(out.contains("/demos/loader.js"), "loader not referenced");
         assert!(out.contains(r#"data-preset="coral""#), "presets missing");
         assert!(out.contains("noscript"), "no fallback for JS-disabled visitors");
+        assert!(
+            out.contains(r#"aria-label="Reaction-diffusion simulation""#),
+            "canvas missing an accessible label"
+        );
     }
 
     #[test]

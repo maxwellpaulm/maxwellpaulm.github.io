@@ -12,7 +12,9 @@ const PRESETS = {
 async function main() {
   const canvas = document.getElementById("rd-canvas");
   const status = document.getElementById("rd-status");
-  if (!canvas) return;
+  const toggle = document.getElementById("rd-toggle");
+  const reset = document.getElementById("rd-reset");
+  if (!canvas || !status || !toggle || !reset) return;
 
   const wasm = await init();
   const sim = new Simulation(220, 140);
@@ -25,6 +27,7 @@ async function main() {
 
   let preset = PRESETS.coral;
   let running = false;
+  let generation = 0;
   let frames = 0, fpsAt = performance.now();
 
   const isDark = () => document.documentElement.dataset.theme === "dark";
@@ -45,8 +48,8 @@ async function main() {
     ctx.putImageData(image, 0, 0);
   }
 
-  function frame() {
-    if (!running) return;
+  function frame(gen) {
+    if (!running || gen !== generation) return; // stale chain exits
     sim.step(preset.feed, preset.kill, 8);
     draw();
     frames++;
@@ -56,19 +59,24 @@ async function main() {
       frames = 0;
       fpsAt = now;
     }
-    requestAnimationFrame(frame);
+    requestAnimationFrame(() => frame(gen));
   }
 
   function start() {
     if (running) return;
     running = true;
+    generation++;
+    const gen = generation;
     status.textContent = "running";
-    requestAnimationFrame(frame);
+    toggle.textContent = "Pause";
+    requestAnimationFrame(() => frame(gen));
   }
 
   function stop() {
     running = false;
+    generation++; // orphans any pending frame from the current chain
     status.textContent = "paused";
+    toggle.textContent = "Resume";
   }
 
   canvas.addEventListener("pointerdown", (e) => {
@@ -79,10 +87,10 @@ async function main() {
     if (!running) draw();
   });
 
-  document.getElementById("rd-toggle").addEventListener("click", () => {
+  toggle.addEventListener("click", () => {
     running ? stop() : start();
   });
-  document.getElementById("rd-reset").addEventListener("click", () => {
+  reset.addEventListener("click", () => {
     seedCentre();
     draw();
   });
@@ -101,9 +109,14 @@ async function main() {
   // asked rather than animating unbidden.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     status.textContent = "paused — reduced motion";
+    toggle.textContent = "Resume";
   } else {
     start();
   }
 }
 
-main();
+main().catch((err) => {
+  const status = document.getElementById("rd-status");
+  if (status) status.textContent = "failed to load";
+  console.error("reaction-diffusion demo failed to load:", err);
+});
