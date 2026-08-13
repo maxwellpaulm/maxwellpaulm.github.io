@@ -48,6 +48,14 @@ async function main() {
     ctx.putImageData(image, 0, 0);
   }
 
+  // The site's theme toggle mutates data-theme but dispatches no event. A
+  // running sim repaints on its own next frame, but a paused one (by
+  // reduced-motion default or a manual Pause) would otherwise sit rendered
+  // in the wrong palette until the next user interaction.
+  new MutationObserver(() => {
+    if (!running) draw();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
   function frame(gen) {
     if (!running || gen !== generation) return; // stale chain exits
     sim.step(preset.feed, preset.kill, 8);
