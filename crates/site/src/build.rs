@@ -280,7 +280,6 @@ mod tests {
             role: "Tester".to_string(),
             lede: "Lede".to_string(),
             bio: "Bio".to_string(),
-            credential: "Credential".to_string(),
             description: "Description".to_string(),
             url: "https://example.com/?a=1&b=2".to_string(),
             projects_intro: "Intro".to_string(),

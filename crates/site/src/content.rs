@@ -11,7 +11,6 @@ pub struct Site {
     /// One sentence. The only line most visitors will read.
     pub lede: String,
     pub bio: String,
-    pub credential: String,
     /// Meta/OG description.
     pub description: String,
     /// Canonical base URL, no trailing slash.
@@ -81,7 +80,6 @@ location = "Y"
 role = "Z"
 lede = "L"
 bio = "B"
-credential = "C"
 projects_intro = "P"
 about = []
 surprise = "should not parse"
@@ -123,7 +121,6 @@ location = "Y"
 role = "Z"
 lede = "L"
 bio = "B"
-credential = "C"
 description = "D"
 url = "https://example.com"
 projects_intro = "P"

@@ -21,8 +21,6 @@ pub fn render(site: &Site) -> Markup {
             span .mono { (format!("{:02}", site.work.len())) }
         }
         (work_list(&site.work))
-
-        p .prose style="margin-top:2rem" { (site.credential) }
     };
     shell::layout(site, Route::Index, "Index", main)
 }
@@ -37,10 +35,9 @@ mod tests {
         let site = Site::load(Path::new("../../content/site.toml")).unwrap();
         let out = render(&site).into_string();
         assert!(out.contains("Paul"), "name missing");
-        assert!(out.contains("trust boundaries in between"), "lede missing");
+        assert!(out.contains("backend systems"), "lede missing");
         assert!(out.contains("Selected Work"));
         assert!(out.contains("Archie BYOC Platform"));
-        assert!(out.contains("3,300"), "credential line missing");
         assert!(out.contains(r#"aria-current="page""#));
     }
 }

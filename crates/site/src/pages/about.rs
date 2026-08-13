@@ -23,7 +23,8 @@ mod tests {
         let site = Site::load(Path::new("../../content/site.toml")).unwrap();
         let out = render(&site).into_string();
         assert_eq!(out.matches("<p class=\"prose\">").count(), site.about.len());
-        assert!(out.contains("CFA charterholder"), "CFA belongs on About");
+        assert!(out.contains("CFA charter"), "CFA belongs on About");
+        assert!(out.contains("24 finishers"), "NSA line belongs on About");
         assert!(out.contains(r#"href="/about/" aria-current="page""#));
     }
 }
