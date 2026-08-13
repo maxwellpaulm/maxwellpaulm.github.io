@@ -15,6 +15,8 @@ pub struct Site {
     pub description: String,
     /// Canonical base URL, no trailing slash.
     pub url: String,
+    pub github: String,
+    pub linkedin: String,
     pub projects_intro: String,
     pub about: Vec<String>,
     #[serde(default)]
@@ -70,6 +72,18 @@ mod tests {
         assert_eq!(site.location, "Washington, DC");
         assert!(!site.work.is_empty(), "expected selected work entries");
         assert!(site.lede.len() < 160, "lede should stay a single sentence");
+        assert!(!site.github.is_empty(), "github must be set");
+        assert!(!site.linkedin.is_empty(), "linkedin must be set");
+        assert!(
+            site.github.starts_with("https://"),
+            "github should be a full URL: {}",
+            site.github
+        );
+        assert!(
+            site.linkedin.starts_with("https://"),
+            "linkedin should be a full URL: {}",
+            site.linkedin
+        );
     }
 
     #[test]
@@ -123,6 +137,8 @@ lede = "L"
 bio = "B"
 description = "D"
 url = "https://example.com"
+github = "https://github.com/example"
+linkedin = "https://www.linkedin.com/in/example"
 projects_intro = "P"
 about = []
 
