@@ -200,6 +200,25 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
     transition-duration: 0.01ms !important;
   }}
 }}
+
+.rd-canvas {{
+  width: 100%;
+  max-width: 660px;
+  aspect-ratio: 220 / 140;
+  display: block;
+  border: 1px solid var(--rule);
+  image-rendering: pixelated;
+  cursor: crosshair;
+  touch-action: none;
+  margin: calc(var(--space) * 3) 0;
+}}
+.rd-controls {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+  align-items: center;
+  max-width: 660px;
+}}
 "#,
         light = tokens(LIGHT),
         dark = tokens(DARK),

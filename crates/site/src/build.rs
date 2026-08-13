@@ -104,6 +104,11 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
         &pages::not_found::render(&site).into_string(),
         &mut written,
     )?;
+    write(
+        &out.join("demos/reaction-diffusion/index.html"),
+        &pages::demo_reaction_diffusion::render(&site).into_string(),
+        &mut written,
+    )?;
     copy_tree(&root.join("static"), out, &mut written)?;
     copy_tree(&root.join("assets"), &out.join("assets"), &mut written)?;
 
@@ -235,6 +240,27 @@ mod tests {
 
         let sitemap = std::fs::read_to_string(tmp.join("sitemap.xml")).expect("sitemap written");
         assert!(!sitemap.contains("404"), "404 must not appear in the sitemap: {sitemap}");
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn build_writes_the_reaction_diffusion_demo_page_outside_the_sitemap() {
+        let tmp = std::env::temp_dir().join("site-build-test-rd-demo");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+
+        assert!(
+            tmp.join("demos/reaction-diffusion/index.html").exists(),
+            "reaction-diffusion demo page not written"
+        );
+
+        let sitemap = std::fs::read_to_string(tmp.join("sitemap.xml")).expect("sitemap written");
+        assert!(
+            !sitemap.contains("reaction-diffusion"),
+            "demo page is not a Route and must not appear in the sitemap: {sitemap}"
+        );
 
         std::fs::remove_dir_all(&tmp).ok();
     }
