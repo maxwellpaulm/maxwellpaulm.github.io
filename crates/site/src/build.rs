@@ -60,14 +60,23 @@ fn robots_txt(site: &Site) -> String {
 }
 
 /// A standard sitemap with one `<url>` per route — generated from
-/// `Route::ALL` so it cannot drift from the real route set.
-fn sitemap_xml(site: &Site) -> String {
+/// `Route::ALL` so it cannot drift from the real route set — plus `extra`
+/// absolute paths for real, linkable pages that aren't a top-level `Route`
+/// (the reaction-diffusion demo, nested under `/demos/`).
+fn sitemap_xml(site: &Site, extra: &[&str]) -> String {
     let mut urls = String::new();
     for route in Route::ALL {
         urls.push_str(&format!(
             "  <url><loc>{}{}</loc></url>\n",
             escape_xml(&site.url),
             escape_xml(route.path())
+        ));
+    }
+    for path in extra {
+        urls.push_str(&format!(
+            "  <url><loc>{}{}</loc></url>\n",
+            escape_xml(&site.url),
+            escape_xml(path)
         ));
     }
     format!(
@@ -98,7 +107,11 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
 
     write(&out.join("style.css"), &theme::stylesheet(), &mut written)?;
     write(&out.join("robots.txt"), &robots_txt(&site), &mut written)?;
-    write(&out.join("sitemap.xml"), &sitemap_xml(&site), &mut written)?;
+    write(
+        &out.join("sitemap.xml"),
+        &sitemap_xml(&site, &[pages::demos::REACTION_DIFFUSION]),
+        &mut written,
+    )?;
     write(
         &out.join("404.html"),
         &pages::not_found::render(&site).into_string(),
@@ -200,7 +213,7 @@ mod tests {
             work: vec![],
         };
 
-        let sitemap = sitemap_xml(&site);
+        let sitemap = sitemap_xml(&site, &[]);
         assert!(
             !sitemap.contains("&b=2"),
             "raw unescaped ampersand leaked into sitemap: {sitemap}"
@@ -245,21 +258,29 @@ mod tests {
     }
 
     #[test]
-    fn build_writes_the_reaction_diffusion_demo_page_outside_the_sitemap() {
+    fn build_writes_the_reaction_diffusion_demo_page_and_lists_it_in_the_sitemap() {
         let tmp = std::env::temp_dir().join("site-build-test-rd-demo");
         let _ = std::fs::remove_dir_all(&tmp);
 
         build(Path::new("../.."), &tmp, false).expect("build succeeds");
+        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
 
         assert!(
             tmp.join("demos/reaction-diffusion/index.html").exists(),
             "reaction-diffusion demo page not written"
         );
 
+        // Not a `Route`, but a real, stable, linkable URL and the flagship
+        // page of this bucket — it must be discoverable, not hidden because
+        // of an implementation detail of the generator.
         let sitemap = std::fs::read_to_string(tmp.join("sitemap.xml")).expect("sitemap written");
         assert!(
-            !sitemap.contains("reaction-diffusion"),
-            "demo page is not a Route and must not appear in the sitemap: {sitemap}"
+            sitemap.contains(&format!(
+                "<loc>{}{}</loc>",
+                site.url,
+                pages::demos::REACTION_DIFFUSION
+            )),
+            "demo page missing from the sitemap: {sitemap}"
         );
 
         std::fs::remove_dir_all(&tmp).ok();
@@ -283,6 +304,72 @@ mod tests {
                 route
             );
         }
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn demo_page_claims_its_own_canonical_not_its_parent_routes() {
+        let tmp = std::env::temp_dir().join("site-build-test-demo-canonical");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
+
+        // `build_gives_every_real_route_its_own_canonical_and_no_noindex`
+        // loops `Route::ALL` and so cannot see this page — it is nested
+        // under `/demos/` but is not itself a `Route`.
+        let html = std::fs::read_to_string(tmp.join("demos/reaction-diffusion/index.html"))
+            .expect("demo page written");
+        let expected_url = format!("{}{}", site.url, pages::demos::REACTION_DIFFUSION);
+        assert!(
+            html.contains(&format!(r#"<link rel="canonical" href="{expected_url}">"#)),
+            "demo page canonical must be its own URL, not /demos/: {html}"
+        );
+        assert!(
+            html.contains(&format!(r#"<meta property="og:url" content="{expected_url}">"#)),
+            "demo page og:url must be its own URL, not /demos/: {html}"
+        );
+        assert!(!html.contains("noindex"), "demo page must not be noindexed: {html}");
+
+        // Every real Route, plus the demo page above, still claims a
+        // distinct, correct canonical of its own.
+        for route in Route::ALL {
+            let html = std::fs::read_to_string(tmp.join(route.output_path())).unwrap();
+            let canonical = format!(r#"<link rel="canonical" href="{}{}">"#, site.url, route.path());
+            assert!(html.contains(&canonical), "{:?} missing its canonical: {html}", route);
+        }
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn wasm_loader_is_referenced_only_by_the_demo_page() {
+        let tmp = std::env::temp_dir().join("site-build-test-wasm-scope");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+
+        for route in Route::ALL {
+            let html = std::fs::read_to_string(tmp.join(route.output_path())).unwrap();
+            assert!(
+                !html.contains("loader.js"),
+                "{:?} must not download the wasm demo loader: {html}",
+                route
+            );
+        }
+        let not_found = std::fs::read_to_string(tmp.join("404.html")).unwrap();
+        assert!(
+            !not_found.contains("loader.js"),
+            "404 page must not download the wasm demo loader: {not_found}"
+        );
+
+        let demo_html = std::fs::read_to_string(tmp.join("demos/reaction-diffusion/index.html"))
+            .expect("demo page written");
+        assert!(
+            demo_html.contains("loader.js"),
+            "demo page must load the wasm demo: {demo_html}"
+        );
 
         std::fs::remove_dir_all(&tmp).ok();
     }

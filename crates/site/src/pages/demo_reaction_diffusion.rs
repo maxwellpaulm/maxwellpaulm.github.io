@@ -29,7 +29,13 @@ pub fn render(site: &Site) -> Markup {
 
         script type="module" src="/demos/loader.js" {}
     };
-    shell::layout(site, Route::Demos, "Reaction-Diffusion", main)
+    shell::sub_page(
+        site,
+        Route::Demos,
+        crate::pages::demos::REACTION_DIFFUSION,
+        "Reaction-Diffusion",
+        main,
+    )
 }
 
 #[cfg(test)]

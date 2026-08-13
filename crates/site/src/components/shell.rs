@@ -3,14 +3,18 @@ use crate::content::Site;
 use crate::route::Route;
 use maud::{html, Markup, DOCTYPE};
 
-/// Wraps page content in the full HTML document. `route` is `None` for pages
-/// that don't have one stable URL — the 404 page, served for every unmatched
-/// path — in which case no `<link rel="canonical">` or `og:url` is emitted
-/// (there is no correct URL to claim), and `<meta name="robots"
-/// content="noindex">` is added instead, so the page is kept out of search
-/// results outright rather than left to an absent-canonical inference.
-pub fn page(site: &Site, route: Option<Route>, title: &str, body: Markup) -> Markup {
-    let canonical = route.map(|r| format!("{}{}", site.url, r.path()));
+/// Wraps page content in the full HTML document. `canonical_path` is the
+/// site-relative path (e.g. `/about/`) this page claims as its one stable
+/// URL — deliberately a plain path rather than a `Route`, since not every
+/// page that needs a canonical is a top-level `Route` (see `sub_page`).
+/// `None` means the page has no single stable URL — the 404 page, served
+/// for every unmatched path — in which case no `<link rel="canonical">` or
+/// `og:url` is emitted (there is no correct URL to claim), and `<meta
+/// name="robots" content="noindex">` is added instead, so the page is kept
+/// out of search results outright rather than left to an absent-canonical
+/// inference.
+pub fn page(site: &Site, canonical_path: Option<&str>, title: &str, body: Markup) -> Markup {
+    let canonical = canonical_path.map(|p| format!("{}{}", site.url, p));
     // Built once and reused for <title> and og:title so the two can never disagree.
     let full_title = format!("{title} · {}", site.name);
     let og_image = format!("{}/og-image.png", site.url);
@@ -63,9 +67,29 @@ fn composition(site: &Site, nav_current: Option<Route>, main: Markup) -> Markup 
     }
 }
 
-/// Composition A: rail plus main column, wrapped in the document shell.
+/// Composition A: rail plus main column, wrapped in the document shell. The
+/// page currently marked in the rail also claims that route's own path as
+/// its canonical URL — the common case, where "what's current in the nav"
+/// and "what URL this page is" are the same thing.
 pub fn layout(site: &Site, current: Route, title: &str, main: Markup) -> Markup {
-    page(site, Some(current), title, composition(site, Some(current), main))
+    page(site, Some(current.path()), title, composition(site, Some(current), main))
+}
+
+/// Composition A for a page that lives *under* a nav item rather than *at*
+/// it — e.g. a demo page nested under the Demos route. `nav_current` marks
+/// the rail as `layout` would, but `canonical_path` is threaded through to
+/// `page` independently, so the page claims its own URL instead of
+/// borrowing its parent's. Without this split, every sub-page would tell
+/// search engines it's a duplicate of its parent route and point share
+/// cards at the wrong URL.
+pub fn sub_page(
+    site: &Site,
+    nav_current: Route,
+    canonical_path: &str,
+    title: &str,
+    main: Markup,
+) -> Markup {
+    page(site, Some(canonical_path), title, composition(site, Some(nav_current), main))
 }
 
 /// The document shell for `dist/404.html`. GitHub Pages serves this file
@@ -86,7 +110,7 @@ mod tests {
     #[test]
     fn page_emits_a_complete_document() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::About), "About", html! { p { "hello" } }).into_string();
+        let out = page(&site, Some(Route::About.path()), "About", html! { p { "hello" } }).into_string();
         assert!(out.starts_with("<!DOCTYPE html>"), "missing doctype: {out}");
         assert!(out.contains(r#"<html lang="en">"#), "missing lang attribute");
         assert!(out.contains(&format!("<title>About · {}</title>", site.name)));
@@ -98,7 +122,7 @@ mod tests {
     #[test]
     fn page_makes_no_external_requests() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::Index), "Index", html! { p { "x" } }).into_string();
+        let out = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
         // site.url itself is https:// (canonical/OG); nothing else should be.
         for host in ["http://", "https://fonts.", "cdn.", "googleapis"] {
             assert!(!out.contains(host), "external reference {host} found in output");
@@ -108,7 +132,7 @@ mod tests {
     #[test]
     fn page_emits_description_canonical_and_icons() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::About), "About", html! { p { "x" } }).into_string();
+        let out = page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
         assert!(
             out.contains(&format!(r#"<meta name="description" content="{}">"#, site.description)),
             "missing description meta: {out}"
@@ -124,8 +148,8 @@ mod tests {
     #[test]
     fn canonical_url_differs_between_routes() {
         let site = fixture_site();
-        let index = page(&site, Some(Route::Index), "Index", html! { p { "x" } }).into_string();
-        let about = page(&site, Some(Route::About), "About", html! { p { "x" } }).into_string();
+        let index = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
+        let about = page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
 
         let index_canonical = format!(r#"<link rel="canonical" href="{}/">"#, site.url);
         let about_canonical = format!(r#"<link rel="canonical" href="{}/about/">"#, site.url);
@@ -138,7 +162,7 @@ mod tests {
     #[test]
     fn page_emits_og_and_twitter_tags() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::Projects), "Projects", html! { p { "x" } }).into_string();
+        let out = page(&site, Some(Route::Projects.path()), "Projects", html! { p { "x" } }).into_string();
         assert!(out.contains(r#"<meta property="og:type" content="website">"#));
         assert!(out.contains(&format!(r#"<meta property="og:site_name" content="{}">"#, site.name)));
         assert!(out.contains(&format!(
@@ -163,7 +187,7 @@ mod tests {
     #[test]
     fn og_title_agrees_with_the_document_title() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::Resume), "Resume", html! { p { "x" } }).into_string();
+        let out = page(&site, Some(Route::Resume.path()), "Resume", html! { p { "x" } }).into_string();
         assert!(out.contains(&format!("<title>Resume · {}</title>", site.name)));
         assert!(out.contains(&format!(
             r#"<meta property="og:title" content="Resume · {}">"#,
@@ -175,7 +199,7 @@ mod tests {
     fn title_and_og_title_come_from_site_name_not_a_hardcoded_literal() {
         let mut site = fixture_site();
         site.name = "Someone Else Entirely".to_string();
-        let out = page(&site, Some(Route::About), "About", html! { p { "x" } }).into_string();
+        let out = page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
 
         assert!(
             out.contains("<title>About · Someone Else Entirely</title>"),
@@ -197,7 +221,7 @@ mod tests {
     #[test]
     fn head_applies_the_stored_theme_before_first_paint() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::Index), "Index", html! { p { "x" } }).into_string();
+        let out = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
         // A double-quoted fragment, verbatim: if PreEscaped were removed, the
         // `"` characters would come out as `&quot;` and this would fail.
         assert!(
