@@ -273,6 +273,17 @@ mod tests {
     }
 
     #[test]
+    fn resume_page_classes_used_in_markup_are_defined_here() {
+        // pages/resume.rs writes `.resume-page` and `.visually-hidden` with
+        // nothing tying them to this stylesheet. If `.visually-hidden` were
+        // ever dropped here, the failure would be loud and public — five
+        // kilobytes of resume text rendered as visible body copy.
+        let css = stylesheet();
+        assert!(css.contains(".resume-page {"), "stylesheet missing .resume-page: {css}");
+        assert!(css.contains(".visually-hidden {"), "stylesheet missing .visually-hidden: {css}");
+    }
+
+    #[test]
     fn theme_toggle_uses_the_surface_token_as_its_background() {
         let css = stylesheet();
         assert!(

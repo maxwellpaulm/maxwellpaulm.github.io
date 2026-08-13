@@ -1,6 +1,7 @@
 use crate::checks;
 use crate::content::Site;
-use crate::{pages, route::Route, theme};
+use crate::pages::resume::ResumePage;
+use crate::{pages, route::Route, text, theme};
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 
@@ -87,24 +88,74 @@ fn sitemap_xml(site: &Site, extra: &[&str]) -> String {
     )
 }
 
+/// Parses the leading numeric value out of an SVG length attribute value
+/// such as `612pt` or `792` — the unit is ignored, since only the ratio
+/// between width and height matters here (the CSS governs actual display
+/// size).
+fn parse_svg_length(value: &str) -> Option<u32> {
+    let numeric: String = value.chars().take_while(|c| c.is_ascii_digit() || *c == '.').collect();
+    if numeric.is_empty() {
+        return None;
+    }
+    numeric.parse::<f64>().ok().map(|n| n.round() as u32)
+}
+
+/// Extracts `attr="value"` from an SVG's opening `<svg ...>` tag and parses
+/// its leading numeric length.
+fn svg_attr_length(open_tag: &str, attr: &str) -> Option<u32> {
+    let marker = format!("{attr}=\"");
+    let start = open_tag.find(&marker)? + marker.len();
+    let value = &open_tag[start..];
+    let end = value.find('"')?;
+    parse_svg_length(&value[..end])
+}
+
+/// Reads the `width`/`height` declared on an SVG's root element. These
+/// files are produced by our own `pdftocairo` render step, so if they
+/// aren't there, something about the render is genuinely broken — fail
+/// loudly rather than silently shipping an image with no reserved space.
+fn svg_dimensions(svg: &str) -> Result<(u32, u32)> {
+    // Locate the `<svg` tag rather than assuming it opens the file: an XML
+    // declaration (`<?xml version="1.0"?>`) usually precedes it, and that
+    // itself contains a `>` — the first in the document — so scanning for
+    // the plain first `>` would truncate the tag before it even starts.
+    let tag_start = svg.find("<svg").context("no <svg> root element found")?;
+    let tag_end = svg[tag_start..].find('>').map(|i| tag_start + i + 1).unwrap_or(svg.len());
+    let open_tag = &svg[tag_start..tag_end];
+    let width = svg_attr_length(open_tag, "width").context("no parsable width on <svg> root")?;
+    let height = svg_attr_length(open_tag, "height").context("no parsable height on <svg> root")?;
+    Ok((width, height))
+}
+
 /// Finds the rendered resume pages and extracted text, if they exist.
-/// Returns rooted URLs in page order.
-fn resume_artifacts(root: &Path) -> Result<(Vec<String>, String)> {
+/// Pages come back in page order; text is normalised (ligatures expanded,
+/// split small-caps headings joined, trailing form feed stripped).
+fn resume_artifacts(root: &Path) -> Result<(Vec<ResumePage>, String)> {
     let dir = root.join("static/resume");
     if !dir.exists() {
         return Ok((Vec::new(), String::new()));
     }
-    let mut pages: Vec<String> = std::fs::read_dir(&dir)?
+    let mut names: Vec<String> = std::fs::read_dir(&dir)?
         .filter_map(|e| e.ok())
         .filter_map(|e| e.file_name().into_string().ok())
         .filter(|n| n.starts_with("page-") && n.ends_with(".svg"))
-        .map(|n| format!("/resume/{n}"))
         .collect();
-    pages.sort();
+    names.sort();
+
+    let mut pages = Vec::with_capacity(names.len());
+    for name in names {
+        let path = dir.join(&name);
+        let svg = std::fs::read_to_string(&path)
+            .with_context(|| format!("reading {}", path.display()))?;
+        let (width, height) = svg_dimensions(&svg)
+            .with_context(|| format!("{} has no parsable svg dimensions", path.display()))?;
+        pages.push(ResumePage { url: format!("/resume/{name}"), width, height });
+    }
+
     // Dotfile so `copy_tree`'s existing dotfile exclusion keeps it out of the
     // published output for free — no new exclusion rule needed.
-    let text = std::fs::read_to_string(dir.join(".resume.txt")).unwrap_or_default();
-    Ok((pages, text))
+    let raw_text = std::fs::read_to_string(dir.join(".resume.txt")).unwrap_or_default();
+    Ok((pages, text::normalize(&raw_text)))
 }
 
 /// Renders the whole site into `out`. With `strict`, a missing resume PDF is a
@@ -412,19 +463,32 @@ mod tests {
         let html = std::fs::read_to_string(tmp.join("resume/index.html")).unwrap();
         let (pages, _) = resume_artifacts(Path::new("../..")).unwrap();
         for page in &pages {
-            assert!(html.contains(page.as_str()), "resume page {page} not referenced");
+            assert!(html.contains(page.url.as_str()), "resume page {} not referenced", page.url);
         }
-        assert_eq!(
-            html.matches("resume-page").count(),
-            pages.len(),
-            "rendered image count must match discovered pages"
-        );
+        // No count assertion here: `cargo test` runs before the artifacts
+        // exist in CI (see .github/workflows/deploy.yml), so both sides of
+        // any such count would read zero and the assertion would be inert.
+        // The equivalent check that actually runs against real artifacts
+        // lives in the "Verify resume shipped" CI step.
         assert!(
             html.contains("/assets/paul_maxwell_resume.pdf"),
             "download link missing from the built page"
         );
         assert!(!html.contains("<object"), "the old PDF object embed should be gone");
         std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    fn write_svg(path: &Path, width: &str, height: &str) {
+        std::fs::write(
+            path,
+            format!(
+                r#"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 612 792">
+<rect width="10" height="10"/>
+</svg>"#
+            ),
+        )
+        .unwrap();
     }
 
     #[test]
@@ -434,18 +498,15 @@ mod tests {
         std::fs::create_dir_all(dir.join("static/resume")).unwrap();
         // Created deliberately out of order — read_dir order is not guaranteed.
         for n in ["page-03.svg", "page-01.svg", "page-02.svg"] {
-            std::fs::write(dir.join("static/resume").join(n), "<svg/>").unwrap();
+            write_svg(&dir.join("static/resume").join(n), "612pt", "792pt");
         }
         std::fs::write(dir.join("static/resume/.resume.txt"), "Aho-Corasick").unwrap();
 
         let (pages, text) = resume_artifacts(&dir).unwrap();
+        let urls: Vec<&str> = pages.iter().map(|p| p.url.as_str()).collect();
         assert_eq!(
-            pages,
-            vec![
-                "/resume/page-01.svg".to_string(),
-                "/resume/page-02.svg".to_string(),
-                "/resume/page-03.svg".to_string(),
-            ],
+            urls,
+            vec!["/resume/page-01.svg", "/resume/page-02.svg", "/resume/page-03.svg"],
             "pages must come back sorted by page number"
         );
         assert_eq!(text, "Aho-Corasick");
@@ -460,6 +521,39 @@ mod tests {
         let (pages, text) = resume_artifacts(&dir).unwrap();
         assert!(pages.is_empty());
         assert!(text.is_empty());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn resume_artifacts_parses_each_pages_intrinsic_dimensions() {
+        let dir = std::env::temp_dir().join("resume-artifacts-dimensions-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("static/resume")).unwrap();
+        write_svg(&dir.join("static/resume/page-01.svg"), "612pt", "792pt");
+
+        let (pages, _) = resume_artifacts(&dir).unwrap();
+        assert_eq!(pages.len(), 1);
+        assert_eq!(pages[0].width, 612, "width must be parsed from the svg root, ignoring the unit");
+        assert_eq!(pages[0].height, 792, "height must be parsed from the svg root, ignoring the unit");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn resume_artifacts_fails_loudly_on_a_page_with_no_parsable_dimensions() {
+        let dir = std::env::temp_dir().join("resume-artifacts-malformed-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("static/resume")).unwrap();
+        std::fs::write(
+            dir.join("static/resume/page-01.svg"),
+            r#"<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>"#,
+        )
+        .unwrap();
+
+        let err = resume_artifacts(&dir).expect_err("missing svg dimensions must error, not skip");
+        assert!(
+            err.to_string().contains("page-01.svg"),
+            "error should name the offending file: {err}"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 

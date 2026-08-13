@@ -60,6 +60,7 @@ jobs:
       run: |
         test -f dist/resume/page-01.svg
         test -f dist/assets/paul_maxwell_resume.pdf
+        grep -q 'class="resume-page" src="/resume/page-01.svg"' dist/resume/index.html
         ls -la dist/resume/
 
     - name: Setup Pages

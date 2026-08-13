@@ -4,6 +4,7 @@ mod components;
 mod content;
 mod pages;
 mod route;
+mod text;
 mod theme;
 
 use anyhow::Result;
