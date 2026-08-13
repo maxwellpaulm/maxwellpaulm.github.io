@@ -1,17 +1,16 @@
 name = "Paul Maxwell"
 location = "Washington, DC"
 role = "Lead Software Engineer / P-1 AI / 2025 —"
-lede = "I build the infrastructure that gets AI systems safely into production — deployment, observability, and the trust boundaries in between."
-bio = "Currently leading platform work at P-1 AI, where our engineering agent runs inside customers' own cloud environments so their data never has to leave. Before that: fraud prevention at Amazon, credit underwriting infrastructure at Ampla, distributed portfolio construction at BlackRock."
-credential = "NSA Codebreaker Challenge — one of 24 finishers out of more than 3,300 participants, 2023."
-description = "Paul Maxwell — Lead Software Engineer at P-1 AI, building the infrastructure that gets AI systems safely into production. Washington, DC."
+lede = "Software engineer. I build backend systems — platforms, data pipelines, and the services around them."
+bio = "Currently at P-1 AI, working on the platform behind Archie, an AI engineering agent. Before that: fraud detection at Amazon, credit underwriting at Ampla, portfolio analytics at BlackRock."
+description = "Paul Maxwell — software engineer at P-1 AI. Washington, DC."
 url = "https://paul-maxwell.com"
 projects_intro = "Selected work, most recent first. Longer write-ups and interactive demos are on the way."
 
 about = [
-  "I work at the layer where a system meets production and has to be trusted. That has meant bring-your-own-cloud deployment for an AI engineering agent, zero-trust gateways that keep real credentials out of agent sandboxes, real-time fraud detection, and underwriting controls that have to be auditable by people who are not engineers.",
-  "I hold a Master's in Computer Science from Georgia Tech and a BSE from the University of Michigan, and I am a CFA charterholder — an unusual pairing that turns out to be useful anywhere software meets capital.",
-  "Outside of work I do security challenges; I was one of 24 finishers of the NSA Codebreaker Challenge out of more than 3,300 participants in 2023.",
+  "I'm a software engineer in Washington, DC, currently at P-1 AI working on the platform behind an AI engineering agent — everything from how it deploys into customer clouds to the plugin and dataset infrastructure it runs on. Earlier I worked on fraud detection at Amazon, underwriting systems at Ampla, and portfolio tooling at BlackRock.",
+  "I have a master's in computer science from Georgia Tech, a BSE from Michigan, and a CFA charter.",
+  "In 2023 I was one of 24 finishers (of about 3,300) in the NSA Codebreaker Challenge.",
 ]
 
 [[work]]
@@ -30,7 +29,7 @@ summary = "A phantom-token pattern — agent code in ephemeral sandboxes holds o
 title = "Duplicate-Invoice Detection"
 org = "Amazon"
 year = "2024"
-summary = "Real-time service bursting to 500 TPS with pluggable rule and ML engines, inside a suite blocking $1B+ in fraud annually."
+summary = "Real-time duplicate-invoice detection (up to 500 TPS) with pluggable rule and ML engines, part of Amazon's fraud-prevention suite."
 
 [[work]]
 title = "EU Compliance Ingestion"
