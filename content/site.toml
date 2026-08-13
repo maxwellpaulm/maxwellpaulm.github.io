@@ -7,7 +7,7 @@ description = "Paul Maxwell — software engineer at P-1 AI. Washington, DC."
 url = "https://paul-maxwell.com"
 github = "https://github.com/maxwellpaulm"
 linkedin = "https://www.linkedin.com/in/maxwellpaulm"
-projects_intro = "Selected work, most recent first. Longer write-ups and interactive demos are on the way."
+projects_intro = "Selected work, most recent first."
 
 about = [
   "I'm a software engineer in Washington, DC, currently at P-1 AI working on the platform behind an AI engineering agent — everything from how it deploys into customer clouds to the plugin and dataset infrastructure it runs on. Earlier I worked on fraud detection at Amazon, underwriting systems at Ampla, and portfolio tooling at BlackRock.",
