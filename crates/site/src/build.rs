@@ -282,6 +282,8 @@ mod tests {
             bio: "Bio".to_string(),
             description: "Description".to_string(),
             url: "https://example.com/?a=1&b=2".to_string(),
+            github: "https://github.com/example".to_string(),
+            linkedin: "https://www.linkedin.com/in/example".to_string(),
             projects_intro: "Intro".to_string(),
             about: vec![],
             work: vec![],

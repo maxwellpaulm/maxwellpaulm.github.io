@@ -5,6 +5,8 @@ lede = "Software engineer. I build backend systems — platforms, data pipelines
 bio = "Currently at P-1 AI, working on the platform behind Archie, an AI engineering agent. Before that: fraud detection at Amazon, credit underwriting at Ampla, portfolio analytics at BlackRock."
 description = "Paul Maxwell — software engineer at P-1 AI. Washington, DC."
 url = "https://paul-maxwell.com"
+github = "https://github.com/maxwellpaulm"
+linkedin = "https://www.linkedin.com/in/maxwellpaulm"
 projects_intro = "Selected work, most recent first. Longer write-ups and interactive demos are on the way."
 
 about = [
