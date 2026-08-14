@@ -1,0 +1,70 @@
+# cargo-deny policy for this repo.
+#
+# Threat model: static site with no server code and no user data. What
+# matters is the dependency tree that feeds the CI pipeline (34 crates as of
+# writing) and the JavaScript/wasm we publish to visitors. This file is
+# checked by `cargo deny check advisories licenses sources` in
+# .github/workflows/security.yml, and can be run locally the same way:
+#
+#   cargo deny check
+#
+# Regenerate/inspect with `cargo deny check licenses` after a `cargo update`
+# if a new dependency introduces a license not covered below.
+
+[advisories]
+# Known security vulnerabilities (RUSTSEC advisories) always fail this
+# check in current cargo-deny — there is no lint-level knob for it, so
+# there is nothing to configure here to "deny vulnerabilities".
+ignore = []
+
+# Unmaintained/unsound advisories are softer signals than a vulnerability
+# (a crate can be "unmaintained" and still be perfectly fine). cargo-deny
+# 0.20 doesn't offer a true warn-vs-deny severity for these two categories
+# in this config file — the `unmaintained`/`unsound` fields only choose
+# *which* crates are checked (all/workspace/transitive/none), and a match
+# always fails the check. We want them checked (not silently skipped) but
+# not yet allowed to fail CI, so we check "all" crates here and downgrade
+# both codes to warnings on the command line in the workflow
+# (`-W unmaintained -W unsound`). Revisit and tighten to deny once the
+# project has lived with visibility on these for a while.
+unmaintained = "all"
+unsound = "all"
+
+# A yanked crate version being in the lockfile means `cargo update` needs
+# to happen; fail the check so it doesn't go unnoticed.
+yanked = "deny"
+
+[licenses]
+# Explicit allowlist derived from what `cargo deny check licenses` reports
+# against the actual tree (34 crates, pulled in by the wasm-bindgen demos
+# and the maud/serde/toml/anyhow site generator):
+#   - MIT, Apache-2.0: the vast majority of the tree (wasm-bindgen family,
+#     serde family, syn/quote/proc-macro2, maud, anyhow, toml family, ...)
+#   - Unicode-3.0: unicode-ident's Unicode data tables
+#     ("(MIT OR Apache-2.0) AND Unicode-3.0")
+# winnow (MIT-only) and version_check/proc-macro2-diagnostics (older
+# "MIT/Apache-2.0" separator syntax) are covered by MIT/Apache-2.0 above.
+# No Zlib or other license currently appears in the tree — nothing
+# speculative is allowed here; add to this list only after re-running
+# `cargo deny check licenses` and seeing a real rejection.
+allow = ["MIT", "Apache-2.0", "Unicode-3.0"]
+
+# Default confidence threshold (0.8) for matching license text.
+confidence-threshold = 0.8
+
+[licenses.private]
+# The three workspace crates (site, reaction-diffusion, aho-corasick-demo)
+# carry no `license` field because they are never published — they're
+# marked `publish = false` in their Cargo.toml, which is what this flag
+# keys off of to skip the license check for them.
+ignore = true
+
+[sources]
+# crates-io only: reject anything from a registry or git source that
+# isn't the standard crates.io index. This is a supply-chain control, not
+# just a warning — an unexpected registry or git dependency is exactly
+# the kind of thing that should stop the build.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
