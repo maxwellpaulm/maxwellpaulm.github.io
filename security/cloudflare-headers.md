@@ -7,7 +7,8 @@ source of truth for the two hash values below.
 
 ## 1. Transform Rule: response headers
 
-**Rules → Overview → Create rule → Modify Response Header.**
+**Rules → Create rule → Response Header Transform Rule** (Cloudflare's
+current name for modify-response-header rules).
 
 - Rule name: e.g. `Security headers`
 - When incoming requests match: **All incoming requests** (this is a
@@ -83,7 +84,20 @@ them either.
 
 ## 2. HSTS
 
-**SSL/TLS → Edge Certificates → HTTP Strict Transport Security.**
+**As applied: a fifth header in the same Transform Rule** — simplest, and
+keeps all five headers reviewable in one place:
+
+### `Strict-Transport-Security`
+
+```
+max-age=31536000
+```
+
+(Cloudflare's built-in toggle under **SSL/TLS → Edge Certificates →
+HTTP Strict Transport Security** sets the identical header and is a fine
+alternative — use one mechanism, not both, or the header duplicates.)
+
+Settings rationale, whichever mechanism:
 
 - **Max age**: 12 months
 - **Apply HSTS policy to subdomains (includeSubDomains)**: **off**
