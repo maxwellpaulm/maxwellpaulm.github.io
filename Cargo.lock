@@ -3,6 +3,13 @@
 version = 4
 
 [[package]]
+name = "aho-corasick-demo"
+version = "0.1.0"
+dependencies = [
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "anyhow"
 version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
