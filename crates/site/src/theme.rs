@@ -234,6 +234,45 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
   align-items: center;
   max-width: 660px;
 }}
+
+.ac-canvas {{
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 16 / 9;
+  display: block;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  margin: calc(var(--space) * 3) 0;
+}}
+.ac-controls {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+  align-items: center;
+  max-width: 720px;
+  margin-bottom: calc(var(--space) * 2);
+}}
+.demo-input {{
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 5px 9px;
+}}
+#ac-scan {{
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.9;
+  max-width: 720px;
+  margin: calc(var(--space) * 2.5) 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}}
+#ac-scan .consumed {{ color: var(--muted); }}
+#ac-scan .current {{ background: var(--accent); color: var(--surface); border-radius: 2px; }}
+#ac-scan .matched {{ background: var(--rule); border-bottom: 2px solid var(--accent); }}
 "#,
         light = tokens(LIGHT),
         dark = tokens(DARK),
@@ -331,6 +370,40 @@ mod tests {
         assert!(css.contains("--paper: #0E0F11"), "dark tokens missing");
         assert!(css.contains("prefers-reduced-motion: reduce"));
         assert!(css.contains(":focus-visible"), "focus ring missing");
+    }
+
+    #[test]
+    fn ac_canvas_class_used_in_markup_is_defined_here() {
+        // pages/demo_aho_corasick.rs writes `.ac-canvas` with nothing tying
+        // it to this stylesheet.
+        let css = stylesheet();
+        assert!(css.contains(".ac-canvas {"), "stylesheet missing .ac-canvas: {css}");
+        assert!(
+            css.contains("aspect-ratio: 16 / 9;"),
+            "stylesheet missing the responsive aspect-ratio on .ac-canvas: {css}"
+        );
+    }
+
+    #[test]
+    fn demo_input_class_used_in_markup_is_defined_here() {
+        // pages/demo_aho_corasick.rs writes `.demo-input` with nothing
+        // tying it to this stylesheet.
+        let css = stylesheet();
+        assert!(css.contains(".demo-input {"), "stylesheet missing .demo-input: {css}");
+        assert!(
+            css.contains(".demo-input {\n  font-family: var(--font-mono);"),
+            "demo inputs should be set in the mono typeface: {css}"
+        );
+    }
+
+    #[test]
+    fn ac_scan_span_classes_used_in_markup_are_defined_here() {
+        // static/demos/aho-loader.js writes `.consumed`/`.current`/`.matched`
+        // spans inside `#ac-scan` with nothing tying them to this stylesheet.
+        let css = stylesheet();
+        for class in ["#ac-scan .consumed {", "#ac-scan .current {", "#ac-scan .matched {"] {
+            assert!(css.contains(class), "stylesheet missing {class}: {css}");
+        }
     }
 
     #[test]
