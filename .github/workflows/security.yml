@@ -1,0 +1,55 @@
+name: Security Scans
+
+on:
+  pull_request:
+  schedule:
+    # 03:17 UTC every Monday — off-peak, avoids the top-of-hour thundering herd.
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command-arguments: advisories licenses sources -W unmaintained -W unsound
+
+  zizmor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        with:
+          inputs: .github/workflows/
+          # No Advanced Security / code-scanning integration on this repo, so
+          # findings are printed to the job log and fail the job directly
+          # instead of being uploaded to the (unused) Security tab.
+          advanced-security: false
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # User account repo: gitleaks-action is free here, no
+          # GITLEAKS_LICENSE secret needed (that's only for organizations).
+          # PR commenting is disabled rather than granting pull-requests:
+          # write beyond the workflow's read-only permissions block.
+          GITLEAKS_ENABLE_COMMENTS: "false"

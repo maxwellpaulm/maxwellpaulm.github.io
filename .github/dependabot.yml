@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    # Major-version bumps are left ungrouped so each one gets its own PR
+    # and review, rather than being bundled with routine updates.
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    # Covers both .github/workflows/*.yml, including the SHA-pinned actions
+    # in deploy.yml and security.yml — Dependabot understands the
+    # `owner/repo@<sha> # vX.Y.Z` comment convention and proposes updates
+    # to both the pin and the comment together.
