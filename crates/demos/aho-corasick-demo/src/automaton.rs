@@ -12,6 +12,7 @@ pub enum BuildError {
 const MAX_PATTERNS: usize = 8;
 const MAX_PATTERN_LEN: usize = 10;
 
+#[derive(Debug, PartialEq)]
 struct Node {
     label: u8,
     parent: usize,
@@ -21,6 +22,7 @@ struct Node {
     outputs: Vec<usize>,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Automaton {
     nodes: Vec<Node>,
 }
@@ -85,10 +87,9 @@ impl Automaton {
                 let label = nodes[c].label;
                 let mut f = nodes[u].fail;
                 let fail_of_c = loop {
+                    // f is always strictly shallower than u, so t can never be c itself.
                     if let Some(t) = nodes[f].children.iter().copied().find(|&t| nodes[t].label == label) {
-                        if t != c {
-                            break t;
-                        }
+                        break t;
                     }
                     if f == 0 {
                         break 0;
@@ -269,5 +270,43 @@ mod tests {
         }
         // aa ends at 2,3,4; aaa ends at 3,4.
         assert_eq!(found, vec![(0, 2), (1, 3), (0, 3), (1, 4), (0, 4)]);
+    }
+
+    #[test]
+    fn transitive_suffix_outputs_inherit_through_two_levels() {
+        // cba's outputs must inherit through ba, which itself inherits from a.
+        // A DFS/stack build order reads ba's outputs before ba has merged
+        // from a, yielding [2, 1] — this asserts the BFS invariant.
+        let a = Automaton::build(&["a", "ba", "cba"]).unwrap();
+        assert_eq!(a.outputs(state_for(&a, "cba")), &[2, 1, 0]);
+    }
+
+    #[test]
+    fn non_alphabetic_bytes_reset_and_still_count_positions() {
+        let a = Automaton::build(&["he"]).unwrap();
+        let mut c = Cursor::new(&a);
+        let mut found = Vec::new();
+        for b in "he he".bytes() {
+            let ev = c.step(b);
+            if b == b' ' {
+                assert_eq!(ev.state, 0, "space must reset to root");
+                assert!(ev.matches.is_empty() && ev.hops.is_empty());
+            }
+            found.extend(ev.matches);
+        }
+        // End positions count the space: 2 and 5 against the original text.
+        assert_eq!(found, vec![(0, 2), (0, 5)]);
+    }
+
+    #[test]
+    fn patterns_strip_non_alphabetic_rather_than_rejecting() {
+        let a = Automaton::build(&["h3-e"]).unwrap(); // folds to "he"
+        let mut c = Cursor::new(&a);
+        let mut found = Vec::new();
+        for b in "he".bytes() {
+            found.extend(c.step(b).matches);
+        }
+        assert_eq!(found, vec![(0, 2)]);
+        assert_eq!(Automaton::build(&["123"]), Err(BuildError::EmptyPattern));
     }
 }
