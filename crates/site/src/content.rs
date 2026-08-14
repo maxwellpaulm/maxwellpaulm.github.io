@@ -30,6 +30,8 @@ pub struct Work {
     pub org: String,
     pub year: String,
     pub summary: String,
+    #[serde(default)]
+    pub detail: String,
 }
 
 impl Site {

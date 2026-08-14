@@ -40,4 +40,14 @@ mod tests {
         assert!(out.contains("Archie BYOC Platform"));
         assert!(out.contains(r#"aria-current="page""#));
     }
+
+    #[test]
+    fn index_does_not_leak_the_projects_page_writeups() {
+        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
+        let out = render(&site).into_string();
+        assert!(
+            !out.contains("without forking the platform"),
+            "detail copy leaked onto the homepage"
+        );
+    }
 }

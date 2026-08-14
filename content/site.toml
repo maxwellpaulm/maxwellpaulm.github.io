@@ -20,27 +20,32 @@ title = "Archie BYOC Platform"
 org = "P-1 AI"
 year = "2025"
 summary = "Deploys an engineering AI agent into customer-controlled cloud; each install assembles from independently versioned components."
+detail = "P-1's engineering agent runs inside customer cloud environments rather than ours. Each install is assembled from independently versioned components, so deployments can differ per customer without forking the platform."
 
 [[work]]
 title = "Zero-Trust Agent Gateway"
 org = "P-1 AI"
 year = "2025"
 summary = "A phantom-token pattern — agent code in ephemeral sandboxes holds only opaque, request-scoped tokens; the gateway keeps every real credential."
+detail = "Agent-written code runs in ephemeral sandboxes and never holds real credentials. Sandboxes get opaque, request-scoped tokens; the gateway holds the real ones and enforces authentication, authorization, scoping, and rate limits."
 
 [[work]]
 title = "Duplicate-Invoice Detection"
 org = "Amazon"
 year = "2024"
 summary = "Real-time duplicate-invoice detection (up to 500 TPS) with pluggable rule and ML engines, part of Amazon's fraud-prevention suite."
+detail = "Real-time detection service handling bursts up to 500 TPS, with rule-based and ML engines behind a common interface so new detectors ship without touching the pipeline. Runs on Lambda, SageMaker, and OpenSearch."
 
 [[work]]
 title = "EU Compliance Ingestion"
 org = "Amazon"
 year = "2024"
 summary = "Processes roughly one billion book titles per year, extracting required metadata and storing compliance artifacts at 500 TPS."
+detail = "Pipeline on Fargate, SNS/SQS, and Lambda processing roughly a billion book titles a year — extracting required metadata and storing compliance artifacts at up to 500 TPS."
 
 [[work]]
 title = "Transaction Tagging Engine"
 org = "Ampla"
 year = "2022"
 summary = "Re-implemented with Aho–Corasick; runtime went from hours to 90 seconds."
+detail = "Re-implemented Ampla's transaction tagging around Aho–Corasick string matching, taking runtime from hours to 90 seconds."
