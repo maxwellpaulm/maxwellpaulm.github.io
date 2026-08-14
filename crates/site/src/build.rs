@@ -184,7 +184,7 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     write(&out.join("robots.txt"), &robots_txt(&site), &mut written)?;
     write(
         &out.join("sitemap.xml"),
-        &sitemap_xml(&site, &[pages::demos::REACTION_DIFFUSION]),
+        &sitemap_xml(&site, &[pages::demos::REACTION_DIFFUSION, pages::demos::AHO_CORASICK]),
         &mut written,
     )?;
     write(
@@ -195,6 +195,11 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     write(
         &out.join("demos/reaction-diffusion/index.html"),
         &pages::demo_reaction_diffusion::render(&site).into_string(),
+        &mut written,
+    )?;
+    write(
+        &out.join("demos/aho-corasick/index.html"),
+        &pages::demo_aho_corasick::render(&site).into_string(),
         &mut written,
     )?;
     copy_tree(&root.join("static"), out, &mut written)?;
@@ -420,32 +425,99 @@ mod tests {
     }
 
     #[test]
-    fn wasm_loader_is_referenced_only_by_the_demo_page() {
+    fn wasm_loaders_are_referenced_only_by_their_own_demo_page() {
         let tmp = std::env::temp_dir().join("site-build-test-wasm-scope");
         let _ = std::fs::remove_dir_all(&tmp);
 
         build(Path::new("../.."), &tmp, false).expect("build succeeds");
 
+        // "loader.js" is a substring of "aho-loader.js" too, so this single
+        // check already catches either loader leaking onto a route page.
         for route in Route::ALL {
             let html = std::fs::read_to_string(tmp.join(route.output_path())).unwrap();
             assert!(
                 !html.contains("loader.js"),
-                "{:?} must not download the wasm demo loader: {html}",
+                "{:?} must not download any wasm demo loader: {html}",
                 route
             );
         }
         let not_found = std::fs::read_to_string(tmp.join("404.html")).unwrap();
         assert!(
             !not_found.contains("loader.js"),
-            "404 page must not download the wasm demo loader: {not_found}"
+            "404 page must not download any wasm demo loader: {not_found}"
         );
 
-        let demo_html = std::fs::read_to_string(tmp.join("demos/reaction-diffusion/index.html"))
-            .expect("demo page written");
+        // A plain `contains("loader.js")` cannot tell the two demo pages
+        // apart from each other — "aho-loader.js" contains "loader.js" as a
+        // substring — so isolation between the two demos needs the exact
+        // `src="..."` attribute value.
+        let rd_html = std::fs::read_to_string(tmp.join("demos/reaction-diffusion/index.html"))
+            .expect("reaction-diffusion demo page written");
         assert!(
-            demo_html.contains("loader.js"),
-            "demo page must load the wasm demo: {demo_html}"
+            rd_html.contains(r#"src="/demos/loader.js""#),
+            "reaction-diffusion demo must load its own loader: {rd_html}"
         );
+        assert!(
+            !rd_html.contains(r#"src="/demos/aho-loader.js""#),
+            "reaction-diffusion demo must not load the aho-corasick loader: {rd_html}"
+        );
+
+        let ac_html = std::fs::read_to_string(tmp.join("demos/aho-corasick/index.html"))
+            .expect("aho-corasick demo page written");
+        assert!(
+            ac_html.contains(r#"src="/demos/aho-loader.js""#),
+            "aho-corasick demo must load its own loader: {ac_html}"
+        );
+        assert!(
+            !ac_html.contains(r#"src="/demos/loader.js""#),
+            "aho-corasick demo must not load the reaction-diffusion loader: {ac_html}"
+        );
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn build_writes_the_aho_corasick_demo_page_and_lists_it_in_the_sitemap() {
+        let tmp = std::env::temp_dir().join("site-build-test-ac-demo");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
+
+        assert!(
+            tmp.join("demos/aho-corasick/index.html").exists(),
+            "aho-corasick demo page not written"
+        );
+
+        let sitemap = std::fs::read_to_string(tmp.join("sitemap.xml")).expect("sitemap written");
+        assert!(
+            sitemap.contains(&format!("<loc>{}{}</loc>", site.url, pages::demos::AHO_CORASICK)),
+            "demo page missing from the sitemap: {sitemap}"
+        );
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn aho_corasick_demo_claims_its_own_canonical_not_its_parent_routes() {
+        let tmp = std::env::temp_dir().join("site-build-test-ac-demo-canonical");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
+
+        let html = std::fs::read_to_string(tmp.join("demos/aho-corasick/index.html"))
+            .expect("demo page written");
+        let expected_url = format!("{}{}", site.url, pages::demos::AHO_CORASICK);
+        assert!(
+            html.contains(&format!(r#"<link rel="canonical" href="{expected_url}">"#)),
+            "demo page canonical must be its own URL, not /demos/: {html}"
+        );
+        assert!(
+            html.contains(&format!(r#"<meta property="og:url" content="{expected_url}">"#)),
+            "demo page og:url must be its own URL, not /demos/: {html}"
+        );
+        assert!(!html.contains("noindex"), "demo page must not be noindexed: {html}");
 
         std::fs::remove_dir_all(&tmp).ok();
     }

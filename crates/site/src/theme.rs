@@ -234,6 +234,50 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
   align-items: center;
   max-width: 660px;
 }}
+
+.ac-canvas {{
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 16 / 9;
+  display: block;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  margin: calc(var(--space) * 3) 0;
+}}
+.ac-controls {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+  align-items: center;
+  max-width: 720px;
+  margin-bottom: calc(var(--space) * 2);
+}}
+.demo-input {{
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 5px 9px;
+}}
+#ac-scan {{
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.9;
+  max-width: 720px;
+  margin: calc(var(--space) * 2.5) 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}}
+#ac-scan .consumed {{ color: var(--muted); }}
+#ac-scan .current {{ background: var(--accent); color: var(--surface); border-radius: 2px; }}
+#ac-scan .matched {{ background: var(--rule); color: var(--ink); border-bottom: 2px solid var(--accent); }}
+.demo-status {{
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+}}
 "#,
         light = tokens(LIGHT),
         dark = tokens(DARK),
@@ -331,6 +375,90 @@ mod tests {
         assert!(css.contains("--paper: #0E0F11"), "dark tokens missing");
         assert!(css.contains("prefers-reduced-motion: reduce"));
         assert!(css.contains(":focus-visible"), "focus ring missing");
+    }
+
+    #[test]
+    fn ac_canvas_class_used_in_markup_is_defined_here() {
+        // pages/demo_aho_corasick.rs writes `.ac-canvas` with nothing tying
+        // it to this stylesheet.
+        let css = stylesheet();
+        assert!(css.contains(".ac-canvas {"), "stylesheet missing .ac-canvas: {css}");
+        assert!(
+            css.contains("aspect-ratio: 16 / 9;"),
+            "stylesheet missing the responsive aspect-ratio on .ac-canvas: {css}"
+        );
+    }
+
+    #[test]
+    fn demo_input_class_used_in_markup_is_defined_here() {
+        // pages/demo_aho_corasick.rs writes `.demo-input` with nothing
+        // tying it to this stylesheet.
+        let css = stylesheet();
+        assert!(css.contains(".demo-input {"), "stylesheet missing .demo-input: {css}");
+        assert!(
+            css.contains(".demo-input {\n  font-family: var(--font-mono);"),
+            "demo inputs should be set in the mono typeface: {css}"
+        );
+    }
+
+    #[test]
+    fn ac_scan_span_classes_used_in_markup_are_defined_here() {
+        // static/demos/aho-loader.js writes `.consumed`/`.current`/`.matched`
+        // spans inside `#ac-scan` with nothing tying them to this stylesheet.
+        let css = stylesheet();
+        for class in ["#ac-scan .consumed {", "#ac-scan .current {", "#ac-scan .matched {"] {
+            assert!(css.contains(class), "stylesheet missing {class}: {css}");
+        }
+    }
+
+    #[test]
+    fn demo_status_class_used_in_markup_is_defined_here() {
+        // pages/demo_aho_corasick.rs writes `#ac-status` with `.demo-status`
+        // (10px uppercase `.mono` defeats "loud errors" for the status
+        // line that also carries build-error text) with nothing tying it
+        // to this stylesheet.
+        let css = stylesheet();
+        assert!(css.contains(".demo-status {"), "stylesheet missing .demo-status: {css}");
+        assert!(
+            !css.contains(".demo-status {\n  font-family: var(--font-mono);\n  font-size: 10px;"),
+            "status text must not be shrunk back to .mono's 10px uppercase treatment: {css}"
+        );
+    }
+
+    #[test]
+    fn matched_scan_text_meets_wcag_aa_against_its_own_background() {
+        // #ac-scan .matched sets an explicit `color: var(--ink)` on
+        // `background: var(--rule)` rather than inheriting `.consumed`'s
+        // `color: var(--muted)` — a matched character is normally also
+        // `consumed` (equal-specificity selectors, source order decides),
+        // and muted-on-rule is only 3.83:1, below AA. Pin both the text
+        // colour and the accent underline against that same background.
+        for (name, p) in [("light", LIGHT), ("dark", DARK)] {
+            let ink_ratio = contrast_ratio(p.ink, p.rule);
+            assert!(ink_ratio >= 4.5, "{name} ink-on-rule is {ink_ratio:.2}:1, below WCAG AA 4.5:1");
+            let accent_ratio = contrast_ratio(p.accent, p.rule);
+            assert!(
+                accent_ratio >= 4.5,
+                "{name} accent-on-rule is {accent_ratio:.2}:1, below WCAG AA 4.5:1"
+            );
+        }
+    }
+
+    #[test]
+    fn ac_scan_and_canvas_class_names_agree_with_the_loader_that_writes_them() {
+        // The stylesheet-tying tests above only prove these classes exist
+        // *somewhere* in this file — they don't prove the loader that
+        // actually writes/reads them still spells them the same way.
+        // Renaming a class in either place alone should break the build.
+        let css = stylesheet();
+        const LOADER_JS: &str = include_str!("../../../static/demos/aho-loader.js");
+        for class in ["consumed", "current", "matched", "ac-canvas"] {
+            assert!(css.contains(class), "stylesheet no longer mentions {class}: {css}");
+            assert!(
+                LOADER_JS.contains(class),
+                "static/demos/aho-loader.js no longer mentions {class}"
+            );
+        }
     }
 
     #[test]
