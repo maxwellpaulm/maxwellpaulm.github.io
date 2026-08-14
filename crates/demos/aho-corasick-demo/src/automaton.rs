@@ -12,7 +12,6 @@ pub enum BuildError {
 const MAX_PATTERNS: usize = 8;
 const MAX_PATTERN_LEN: usize = 10;
 
-#[derive(Debug, PartialEq)]
 struct Node {
     label: u8,
     parent: usize,
@@ -22,7 +21,6 @@ struct Node {
     outputs: Vec<usize>,
 }
 
-#[derive(Debug, PartialEq)]
 pub struct Automaton {
     nodes: Vec<Node>,
 }
@@ -307,6 +305,9 @@ mod tests {
             found.extend(c.step(b).matches);
         }
         assert_eq!(found, vec![(0, 2)]);
-        assert_eq!(Automaton::build(&["123"]), Err(BuildError::EmptyPattern));
+        assert!(matches!(
+            Automaton::build(&["123"]),
+            Err(BuildError::EmptyPattern)
+        ));
     }
 }
