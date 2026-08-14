@@ -9,8 +9,36 @@ pub enum BuildError {
     PatternTooLong,
 }
 
+impl std::fmt::Display for BuildError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BuildError::NoPatterns => write!(f, "no patterns given"),
+            BuildError::TooManyPatterns => write!(f, "too many patterns (max {MAX_PATTERNS})"),
+            BuildError::EmptyPattern => {
+                write!(f, "a pattern has no letters left after removing non-letters")
+            }
+            BuildError::PatternTooLong => {
+                write!(f, "pattern too long (max {MAX_PATTERN_LEN} letters)")
+            }
+        }
+    }
+}
+
 const MAX_PATTERNS: usize = 8;
 const MAX_PATTERN_LEN: usize = 10;
+
+/// Strips non-alphabetic bytes and lowercases the rest. `Automaton::build`
+/// folds every pattern this way before inserting it into the trie, so
+/// anything that needs to reason about a pattern's on-trie length (the
+/// wasm wrapper, converting match end positions to text ranges) must fold
+/// with this exact function or its lengths will disagree with the trie's.
+pub fn fold(pattern: &str) -> Vec<u8> {
+    pattern
+        .bytes()
+        .filter(|b| b.is_ascii_alphabetic())
+        .map(|b| b.to_ascii_lowercase())
+        .collect()
+}
 
 struct Node {
     label: u8,
@@ -43,11 +71,7 @@ impl Automaton {
         }];
 
         for (pi, pat) in patterns.iter().enumerate() {
-            let folded: Vec<u8> = pat
-                .bytes()
-                .filter(|b| b.is_ascii_alphabetic())
-                .map(|b| b.to_ascii_lowercase())
-                .collect();
+            let folded = fold(pat);
             if folded.is_empty() {
                 return Err(BuildError::EmptyPattern);
             }
@@ -124,20 +148,54 @@ impl Automaton {
     fn child(&self, s: usize, b: u8) -> Option<usize> {
         self.nodes[s].children.iter().copied().find(|&c| self.nodes[c].label == b)
     }
+
+    /// Advances from `state` on `byte`, taking as many failure hops as the
+    /// trie requires. Non-alphabetic bytes reset to the root (word
+    /// boundary) with no hops. Returns the hops taken (each an intermediate
+    /// state landed on while backing off) and the resulting state.
+    ///
+    /// This is the one place the failure-hop stepping logic lives: both
+    /// `Cursor::step` (native tests) and the wasm wrapper (which cannot
+    /// hold a borrowing `Cursor<'a>` inside a `#[wasm_bindgen]` struct)
+    /// drive the automaton through this method instead of duplicating it.
+    pub fn advance(&self, state: usize, byte: u8) -> (Vec<usize>, usize) {
+        if !byte.is_ascii_alphabetic() {
+            return (Vec::new(), 0);
+        }
+        let b = byte.to_ascii_lowercase();
+        let mut state = state;
+        let mut hops = Vec::new();
+        while self.child(state, b).is_none() && state != 0 {
+            state = self.fail(state);
+            hops.push(state);
+        }
+        if let Some(next) = self.child(state, b) {
+            state = next;
+        }
+        (hops, state)
+    }
 }
 
+// `Cursor` predates `Automaton::advance` (see its doc comment): it now
+// exists solely to exercise `advance` and `outputs` natively without the
+// wasm wrapper's flattened-array bookkeeping. Nothing outside tests
+// constructs one — the wrapper drives the automaton directly — so it is
+// `cfg(test)`-only rather than dead weight in the shipped crate.
+#[cfg(test)]
 pub struct StepEvent {
     pub hops: Vec<usize>,
     pub state: usize,
     pub matches: Vec<(usize, usize)>,
 }
 
+#[cfg(test)]
 pub struct Cursor<'a> {
     automaton: &'a Automaton,
     state: usize,
     pos: usize,
 }
 
+#[cfg(test)]
 impl<'a> Cursor<'a> {
     pub fn new(automaton: &'a Automaton) -> Self {
         Cursor { automaton, state: 0, pos: 0 }
@@ -146,26 +204,10 @@ impl<'a> Cursor<'a> {
     /// Advance one byte. Non-alphabetic bytes reset to root (word boundary).
     pub fn step(&mut self, byte: u8) -> StepEvent {
         self.pos += 1;
-        if !byte.is_ascii_alphabetic() {
-            self.state = 0;
-            return StepEvent { hops: Vec::new(), state: 0, matches: Vec::new() };
-        }
-        let b = byte.to_ascii_lowercase();
-        let mut hops = Vec::new();
-        while self.automaton.child(self.state, b).is_none() && self.state != 0 {
-            self.state = self.automaton.fail(self.state);
-            hops.push(self.state);
-        }
-        if let Some(next) = self.automaton.child(self.state, b) {
-            self.state = next;
-        }
-        let matches = self
-            .automaton
-            .outputs(self.state)
-            .iter()
-            .map(|&pi| (pi, self.pos))
-            .collect();
-        StepEvent { hops, state: self.state, matches }
+        let (hops, state) = self.automaton.advance(self.state, byte);
+        self.state = state;
+        let matches = self.automaton.outputs(state).iter().map(|&pi| (pi, self.pos)).collect();
+        StepEvent { hops, state, matches }
     }
 }
 
@@ -309,5 +351,50 @@ mod tests {
             Automaton::build(&["123"]),
             Err(BuildError::EmptyPattern)
         ));
+    }
+
+    #[test]
+    fn advance_matches_the_cursor_it_replaced() {
+        // `Cursor::step` now delegates its failure-hop logic to
+        // `Automaton::advance`; walk both in lockstep over the textbook
+        // hop-producing case and check they never diverge.
+        let a = textbook();
+        let mut cursor = Cursor::new(&a);
+        let mut state = 0usize;
+        for b in "ushers".bytes() {
+            let event = cursor.step(b);
+            let (hops, next_state) = a.advance(state, b);
+            assert_eq!(hops, event.hops);
+            assert_eq!(next_state, event.state);
+            state = next_state;
+        }
+    }
+
+    #[test]
+    fn build_error_messages_are_readable() {
+        // The wasm wrapper relays `BuildError::to_string()` verbatim as the
+        // JS exception message, so its wording is pinned here rather than
+        // only through the wrapper (which can't run outside a wasm target;
+        // see `lib.rs`'s test module).
+        assert_eq!(BuildError::NoPatterns.to_string(), "no patterns given");
+        assert_eq!(
+            BuildError::TooManyPatterns.to_string(),
+            "too many patterns (max 8)"
+        );
+        assert_eq!(
+            BuildError::PatternTooLong.to_string(),
+            "pattern too long (max 10 letters)"
+        );
+        // `Automaton` has no `Debug` impl, so `Result::unwrap_err` (which
+        // requires the `Ok` side to be `Debug`) isn't available here; match
+        // instead, as the wrapper's `.map_err` effectively does.
+        let nine = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
+        let Err(err) = Automaton::build(&nine) else { panic!("9 patterns should be rejected") };
+        assert_eq!(err.to_string(), "too many patterns (max 8)");
+        let Err(err) = Automaton::build(&["123"]) else { panic!("digits-only pattern should be rejected") };
+        assert_eq!(
+            err.to_string(),
+            "a pattern has no letters left after removing non-letters"
+        );
     }
 }

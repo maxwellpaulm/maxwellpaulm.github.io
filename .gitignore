@@ -4,4 +4,5 @@ set_env.sh
 /assets/paul_maxwell_resume.pdf
 .superpowers/
 /static/demos/reaction-diffusion/
+/static/demos/aho-corasick/
 /static/resume/
