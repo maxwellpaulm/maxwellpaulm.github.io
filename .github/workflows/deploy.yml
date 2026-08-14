@@ -50,6 +50,9 @@ jobs:
     - name: Build site
       run: cargo run -p site -- --strict
 
+    - name: Verify CSP hashes
+      run: ./scripts/check-csp-hashes.sh
+
     - name: Verify wasm shipped
       run: |
         test -f dist/demos/reaction-diffusion/reaction_diffusion_bg.wasm
