@@ -180,6 +180,7 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
 .item p {{ margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--muted); max-width: var(--measure); }}
 .item .year {{ text-align: right; }}
 .org {{ color: var(--accent); }}
+.work-detail {{ font-size: 13.5px; line-height: 1.6; color: var(--ink); max-width: var(--measure); margin: 6px 0 0; }}
 
 .resume-page {{
   display: block;
@@ -271,6 +272,14 @@ mod tests {
         // this stylesheet.
         let css = stylesheet();
         assert!(css.contains(".resume-page {"), "stylesheet missing .resume-page: {css}");
+    }
+
+    #[test]
+    fn work_detail_class_used_in_markup_is_defined_here() {
+        // components/work.rs's work_list_detailed writes `.work-detail` with
+        // nothing tying it to this stylesheet.
+        let css = stylesheet();
+        assert!(css.contains(".work-detail {"), "stylesheet missing .work-detail: {css}");
     }
 
     #[test]
