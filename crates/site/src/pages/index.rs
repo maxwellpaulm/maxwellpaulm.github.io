@@ -14,7 +14,7 @@ pub fn render(site: &Site) -> Markup {
         }
         p .lede { (site.lede) }
         p .prose { (site.bio) }
-        p .mono style="margin-top:2rem" { (site.role) }
+        p .mono .role-line { (site.role) }
 
         div .section-head {
             span .mono { "Selected Work" }

@@ -163,6 +163,7 @@ h1 {{ font-size: 54px; line-height: 1.02; letter-spacing: -0.035em; font-weight:
 h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
 .lede {{ font-size: 17px; line-height: 1.62; max-width: var(--measure); margin: 0 0 calc(var(--space) * 1.75); }}
 .prose {{ font-size: 14.5px; line-height: 1.65; max-width: var(--measure); color: var(--muted); }}
+.role-line {{ margin-top: 2rem; }}
 
 .section-head {{
   display: flex; justify-content: space-between; align-items: baseline;
@@ -316,6 +317,15 @@ mod tests {
         // this stylesheet.
         let css = stylesheet();
         assert!(css.contains(".resume-page {"), "stylesheet missing .resume-page: {css}");
+    }
+
+    #[test]
+    fn role_line_class_used_in_markup_is_defined_here() {
+        // pages/index.rs writes `.role-line` with nothing tying it to this
+        // stylesheet — it replaces a `style="margin-top:2rem"` attribute so
+        // the CSP can drop `style-src-attr 'unsafe-inline'`.
+        let css = stylesheet();
+        assert!(css.contains(".role-line {"), "stylesheet missing .role-line: {css}");
     }
 
     #[test]

@@ -1,0 +1,29 @@
+# CSP source of truth for this site's inline <script> elements.
+#
+# The site emits exactly two distinct inline scripts, identical on every
+# page they appear on:
+#
+#   - head/theme-restore  (crates/site/src/components/shell.rs)
+#     Runs in <head> before first paint. Reads the persisted theme choice
+#     out of localStorage and, if it's "dark", sets
+#     document.documentElement.dataset.theme = "dark" before any content
+#     renders, so there's no light-to-dark flash on reload.
+#
+#   - rail/theme-toggle  (crates/site/src/components/rail.rs)
+#     Wires up the dark-mode toggle button in the rail: syncs its label
+#     and aria-pressed state to the current theme, and flips the theme
+#     (updating both the DOM attribute and localStorage) on click.
+#
+# scripts/check-csp-hashes.sh recomputes the sha256 of every inline
+# <script> body in dist/**/*.html and diffs the resulting set against the
+# non-comment lines below, exactly (extra dist hash or a stale unused
+# line here are both treated as drift and fail the build).
+#
+# The Cloudflare Transform Rule CSP (see security/cloudflare-headers.md)
+# must list exactly these two hashes in its script-src directive. If
+# either inline script's bytes ever change, both this file and the
+# Cloudflare rule must be updated together, or the site's JS silently
+# breaks in production.
+
+sha256-R04+76miHHnkN/gWcsxD3a9pWM52m8KuVPq/ujEngqE=
+sha256-VW0DRQl3KZ97qykJSzGadSViC3KuBUzcUoADouFhSk8=
