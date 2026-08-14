@@ -55,6 +55,9 @@ jobs:
         test -f dist/demos/reaction-diffusion/reaction_diffusion_bg.wasm
         test -f dist/demos/reaction-diffusion/reaction_diffusion.js
         ls -la dist/demos/reaction-diffusion/
+        test -f dist/demos/aho-corasick/aho_corasick_demo_bg.wasm
+        test -f dist/demos/aho-corasick/aho_corasick_demo.js
+        grep -q 'aho-loader.js' dist/demos/aho-corasick/index.html
 
     - name: Verify resume shipped
       run: |
