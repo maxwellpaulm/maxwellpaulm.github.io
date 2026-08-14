@@ -128,22 +128,32 @@ async function main() {
       if (ys[i] > maxY) maxY = ys[i];
     }
     const pad = 26;
-    const spanX = Math.max(1e-6, maxX - minX);
-    const spanY = Math.max(1e-6, maxY);
-    const px = (x) => (spanX === 0 ? w / 2 : pad + ((x - minX) / spanX) * (w - 2 * pad));
+    // A single-node automaton (one pattern, one letter) has minX === maxX,
+    // so this raw span can genuinely be 0 — that's the case the centring
+    // branch below exists for. `spanY` has no equivalent case: `build`
+    // rejects zero patterns and every pattern folds to at least one
+    // letter, so the root always has at least one child and maxY >= 1.
+    const rawSpanX = maxX - minX;
+    const spanX = rawSpanX < 1e-6 ? 1 : rawSpanX;
+    const spanY = maxY;
+    const px = (x) => (rawSpanX < 1e-6 ? w / 2 : pad + ((x - minX) / spanX) * (w - 2 * pad));
     const py = (y) => pad + (y / spanY) * (h - 2 * pad);
 
-    const rule = cssVar("--rule");
     const ink = cssVar("--ink");
     const muted = cssVar("--muted");
     const accent = cssVar("--accent");
     const surface = cssVar("--surface");
+    const mono = cssVar("--font-mono") || "ui-monospace, monospace";
 
     const current = viz.current_state();
     const radius = Math.max(8, Math.min(14, w / (n + 4)));
 
-    // Trie edges: solid line, parent -> child.
-    ctx.strokeStyle = rule;
+    // Trie edges: solid line, parent -> child. `muted`, not `rule` — `rule`
+    // is a hairline border colour (~1.3:1 against the canvas background)
+    // meant for barely-there dividers, not a line the whole diagram's
+    // structure depends on being visible. Failure links share this colour
+    // too; solid-vs-dashed is what distinguishes the two, not colour.
+    ctx.strokeStyle = muted;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([]);
     for (let i = 1; i < n; i++) {
@@ -180,7 +190,12 @@ async function main() {
     // outline.
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = `${Math.max(9, radius)}px var(--font-mono), ui-monospace, monospace`;
+    // The canvas font parser has no declaration context to resolve a CSS
+    // custom property against, so `ctx.font = "...px var(--font-mono)"`
+    // doesn't throw — it silently fails to parse and the whole assignment
+    // is ignored, leaving labels in the canvas default (10px sans-serif).
+    // `mono` above is resolved to a literal font-family list beforehand.
+    ctx.font = `${Math.max(9, radius)}px ${mono}`;
     for (let i = 0; i < n; i++) {
       const x = px(xs[i]), y = py(ys[i]);
       const isTerminal = terminal[i] === 1;
@@ -242,7 +257,13 @@ async function main() {
       status.textContent = `${viz.node_count()} states`;
     } catch (err) {
       // A bad rebuild must not brick the demo the user was already looking
-      // at: the previous automaton (if any) stays exactly as it was.
+      // at: the previous automaton (if any) stays exactly as it was. But if
+      // it was mid-play, that play loop is still running (the `stop()`
+      // above only runs on the success path) and would otherwise overwrite
+      // this error ~333ms later with its next "pos X/Y" tick — pause it
+      // first, quietly, so `stop()`'s own status update doesn't immediately
+      // clobber the error message we're about to show.
+      stop({ quiet: true });
       status.textContent = err && err.message ? err.message : String(err);
     }
   }
@@ -253,7 +274,7 @@ async function main() {
     if (advanced) matched.push(...readMatches());
     refreshScanClasses();
     draw();
-    status.textContent = advanced ? `pos ${viz.pos()}/${text.length}` : "done";
+    status.textContent = advanced ? `pos ${viz.pos()}/${text.length}` : "done — press Reset";
     return advanced;
   }
 
@@ -269,7 +290,7 @@ async function main() {
       if (ts - lastStepAt >= STEP_MS) {
         lastStepAt = ts;
         if (!doStep()) {
-          stop({ quiet: true }); // doStep already set status to "done"
+          stop({ quiet: true }); // doStep already set the "done" status
           return;
         }
       }
@@ -278,7 +299,12 @@ async function main() {
   }
 
   function start() {
-    if (running || !viz || viz.pos() >= text.length) return;
+    if (running || !viz) return;
+    if (viz.pos() >= text.length) {
+      // Silently doing nothing here reads as a broken button; say why.
+      status.textContent = "done — press Reset";
+      return;
+    }
     running = true;
     generation++;
     const gen = generation;
@@ -307,6 +333,14 @@ async function main() {
     if (!running) draw();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
+  // `draw()` sizes the canvas backing store from the element's current CSS
+  // box on every call, so a paused canvas just needs to be told to redraw
+  // when that box changes (e.g. the rail collapsing to a top bar at the
+  // narrow-viewport breakpoint) — a running one already repaints every tick.
+  window.addEventListener("resize", () => {
+    if (!running) draw();
+  });
+
   rebuildBtn.addEventListener("click", rebuild);
   playBtn.addEventListener("click", () => {
     running ? stop() : start();
@@ -329,8 +363,14 @@ async function main() {
 
   rebuild();
 
-  // Respect a reduced-motion preference: build and draw, but never
-  // auto-play or animate unbidden.
+  // Unlike reaction-diffusion, this demo never auto-plays on load — `rebuild()`
+  // above only builds and draws — so this check doesn't currently gate any
+  // live animation. It's kept as documented intent rather than deleted: if
+  // a future change makes this demo auto-play by default too, reduced
+  // motion must be checked before that `start()` call, and this is where
+  // that check belongs. For now it only distinguishes the reduced-motion
+  // status message from the ordinary "N states" one, for anyone who
+  // expected autoplay and is wondering why the canvas is sitting still.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     status.textContent = "paused — reduced motion";
   }

@@ -19,7 +19,7 @@ pub fn render(site: &Site) -> Markup {
             button #ac-play .theme-toggle type="button" { "Play" }
             button #ac-step .theme-toggle type="button" { "Step" }
             button #ac-reset .theme-toggle type="button" { "Reset" }
-            span #ac-status .mono { "loading" }
+            span #ac-status .demo-status { "loading" }
         }
 
         canvas #ac-canvas .ac-canvas aria-label="Aho-Corasick automaton graph" {}
@@ -27,7 +27,7 @@ pub fn render(site: &Site) -> Markup {
         div #ac-scan {}
 
         p .mono { "solid = trie edge · dashed = failure link · filled = pattern end" }
-        p .mono { "lowercase a–z only, up to 8 patterns of 10 letters; text up to 200 characters" }
+        p .prose { "Lowercase a–z only, up to 8 patterns of 10 letters; text up to 200 characters." }
 
         noscript {
             p .prose { "This demo needs JavaScript and WebAssembly. The rest of the site works without either." }
