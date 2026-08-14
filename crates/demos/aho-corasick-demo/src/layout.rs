@@ -46,12 +46,11 @@ mod tests {
     use crate::automaton::Automaton;
 
     #[test]
-    #[allow(clippy::needless_range_loop)] // verbatim from brief; index doubles as `s` for depth(s)
     fn ys_equal_depths_exactly() {
         let a = Automaton::build(&["he", "she", "his", "hers"]).unwrap();
         let pos = layout(&a);
-        for s in 0..a.node_count() {
-            assert_eq!(pos[s].1, a.depth(s) as f32, "state {s}");
+        for (s, p) in pos.iter().enumerate() {
+            assert_eq!(p.1, a.depth(s) as f32, "state {s}");
         }
     }
 
