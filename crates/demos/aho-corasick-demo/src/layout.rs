@@ -45,6 +45,21 @@ mod tests {
     use super::*;
     use crate::automaton::Automaton;
 
+    /// Walks the trie from the root along `word`, returning the state.
+    /// Duplicated from `automaton.rs`'s test-only helper: it lives inside
+    /// that module's `#[cfg(test)]` block and isn't importable across
+    /// modules, and widening the production API just for test plumbing
+    /// was already rejected in Task 1.
+    fn state_for(a: &Automaton, word: &str) -> usize {
+        let mut s = 0;
+        for b in word.bytes() {
+            s = (0..a.node_count())
+                .find(|&n| a.parent(n) == s && a.label(n) == b)
+                .expect("path exists");
+        }
+        s
+    }
+
     #[test]
     fn ys_equal_depths_exactly() {
         let a = Automaton::build(&["he", "she", "his", "hers"]).unwrap();
@@ -80,5 +95,22 @@ mod tests {
         let h = (0..a.node_count()).find(|&s| a.label(s) == b'h').unwrap();
         assert_eq!(pos[h].0, 0.5);
         assert_eq!(pos[0].0, 0.5);
+    }
+
+    /// The textbook automaton's leaves sit at unequal depths (hers at 4,
+    /// his and she at 3), so DFS leaf order (hers, his, she) differs from
+    /// any level-order numbering (which would visit his/she before hers).
+    /// Exact values pin the traversal order, not just the centring maths.
+    #[test]
+    fn asymmetric_depths_keep_dfs_leaf_order() {
+        let a = Automaton::build(&["he", "she", "his", "hers"]).unwrap();
+        let pos = layout(&a);
+        assert_eq!(pos[state_for(&a, "hers")].0, 0.0);
+        assert_eq!(pos[state_for(&a, "his")].0, 1.0);
+        assert_eq!(pos[state_for(&a, "she")].0, 2.0);
+        // h centres over e-subtree (0.0) and i-subtree (1.0); root over
+        // h (0.5) and s (2.0).
+        assert_eq!(pos[state_for(&a, "h")].0, 0.5);
+        assert_eq!(pos[0].0, 1.25);
     }
 }
