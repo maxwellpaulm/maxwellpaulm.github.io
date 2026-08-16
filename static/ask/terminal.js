@@ -2,13 +2,6 @@
 // searcher (ask_terminal wasm), and renders answers into #ask-log.
 // All content shown is authored text from the corpus — this file only
 // formats it. Class names are pinned by theme.rs tests.
-import init, { Terminal } from "./ask_terminal.js";
-
-const EXAMPLES = [
-  "what did paul build at amazon?",
-  "aho-corasick",
-  "who are you?",
-];
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -27,11 +20,28 @@ function sourceLine(source, title) {
   return src;
 }
 
+// Runner-ups are already filtered to a relevance floor by the engine, and
+// every one carries a `source` — link each, rather than listing bare text.
+function alsoLine(also) {
+  const div = el("div", "ask-also");
+  div.appendChild(document.createTextNode("also: "));
+  also.forEach((a, i) => {
+    if (i > 0) div.appendChild(document.createTextNode(" · "));
+    const link = el("a", "", a.title);
+    link.href = a.source;
+    div.appendChild(link);
+  });
+  return div;
+}
+
 async function main() {
   const log = document.getElementById("ask-log");
   const form = document.getElementById("ask-form");
   const input = document.getElementById("ask-input");
-  if (!log || !form || !input) return;
+  if (!log || !form || !input) {
+    console.error("ask: expected #ask-log, #ask-form, #ask-input");
+    return;
+  }
 
   const card = (children) => {
     const c = el("div", "ask-card");
@@ -59,24 +69,24 @@ async function main() {
     input.value = "";
 
     const children = [el("div", "ask-q", "> " + query)];
-    let result;
+    // Guards ask()/JSON.parse AND the rendering below: a response-shape
+    // drift throwing mid-render must not lose the card, or the echoed
+    // "> query" never appends and the page looks frozen.
     try {
-      result = JSON.parse(terminal.ask(query));
+      const result = JSON.parse(terminal.ask(query));
+      if (result.kind === "answer") {
+        if (result.title) children.push(el("div", "", result.title));
+        children.push(el("div", "", result.text));
+        children.push(sourceLine(result.source, result.title));
+        if (result.also.length) {
+          children.push(alsoLine(result.also));
+        }
+      } else {
+        children.push(el("div", "", "no matches — try: " + result.suggest.join(", ")));
+      }
     } catch (err) {
       console.error(err);
       children.push(el("div", "", "the search failed — everything it knows is on /about/ and /projects/."));
-      card(children);
-      return;
-    }
-    if (result.kind === "answer") {
-      if (result.title) children.push(el("div", "", result.title));
-      children.push(el("div", "", result.text));
-      children.push(sourceLine(result.source, result.title));
-      if (result.also.length) {
-        children.push(el("div", "ask-also", "also: " + result.also.map((a) => a.title).join(" · ")));
-      }
-    } else {
-      children.push(el("div", "", "no matches — try: " + result.suggest.join(", ")));
     }
     card(children);
   });
@@ -93,7 +103,14 @@ async function main() {
     }
   });
 
+  let examples = [];
   try {
+    // Dynamic, not static: a static import at module top level throws
+    // before main() ever runs if ask_terminal.js 404s (a partial deploy,
+    // build-wasm.sh not run) — no fallback card, no submit handler,
+    // nothing. Keeping the import inside this try is what makes the
+    // fallback below actually reachable in that case.
+    const { default: init, Terminal } = await import("./ask_terminal.js");
     const [, indexJson] = await Promise.all([
       init(),
       fetch("/ask/index.json").then((r) => {
@@ -102,6 +119,11 @@ async function main() {
       }),
     ]);
     terminal = new Terminal(indexJson);
+    // The greeting's example queries come from the corpus itself (see
+    // content/ask.toml's `examples`), not a hardcoded list here, so an
+    // edited intent phrase can't silently make the site's own suggested
+    // query stop resolving.
+    examples = JSON.parse(indexJson).examples || [];
   } catch (err) {
     console.error(err);
     card([el("div", "", "the terminal failed to load — everything it knows is on /about/ and /projects/.")]);
@@ -109,7 +131,7 @@ async function main() {
   }
 
   card([
-    el("div", "", "ask about my work — e.g. " + EXAMPLES.map((e) => '"' + e + '"').join(", ")),
+    el("div", "", "ask about my work — e.g. " + examples.map((e) => '"' + e + '"').join(", ")),
   ]);
 }
 

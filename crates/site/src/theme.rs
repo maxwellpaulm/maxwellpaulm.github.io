@@ -672,7 +672,7 @@ mod tests {
         // text against the CSS — it doesn't inspect ask.rs's page markup.
         let css = stylesheet();
         const TERMINAL_JS: &str = include_str!("../../../static/ask/terminal.js");
-        for name in ["ask-log", "ask-card", "ask-q", "ask-src", "ask-also", "ask-input"] {
+        for name in ["ask-log", "ask-form", "ask-card", "ask-q", "ask-src", "ask-also", "ask-input"] {
             assert!(TERMINAL_JS.contains(name), "static/ask/terminal.js no longer mentions {name}");
         }
         for class in [".ask-card {", ".ask-q {", ".ask-src {", ".ask-also {"] {

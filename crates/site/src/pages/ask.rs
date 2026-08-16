@@ -12,7 +12,7 @@ pub fn render(site: &Site) -> Markup {
             "no server, no model, no tracking."
         }
 
-        div #ask-log .ask-log {}
+        div #ask-log .ask-log role="log" aria-live="polite" {}
 
         form #ask-form .ask-form {
             span .ask-prompt aria-hidden="true" { ">" }
@@ -42,6 +42,11 @@ mod tests {
     fn ask_page_wires_the_terminal() {
         let out = render(&fixture_site()).into_string();
         assert!(out.contains(r#"id="ask-log""#), "missing scrollback container: {out}");
+        assert!(
+            out.contains(r#"role="log""#) && out.contains(r#"aria-live="polite""#),
+            "scrollback must be an announced live region for screen readers: {out}"
+        );
+        assert!(out.contains(r#"id="ask-form""#), "missing form: {out}");
         assert!(out.contains(r#"id="ask-input""#), "missing query input: {out}");
         assert!(
             out.contains(r#"<script type="module" src="/ask/terminal.js">"#),
