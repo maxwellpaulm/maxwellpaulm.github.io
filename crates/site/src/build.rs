@@ -175,6 +175,7 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
             Route::About => pages::about::render(&site),
             Route::Projects => pages::projects::render(&site),
             Route::Resume => pages::resume::render(&site, &resume_pages),
+            Route::Ask => pages::ask::render(&site),
             Route::Demos => pages::demos::render(&site),
         };
         write(&out.join(route.output_path()), &markup.into_string(), &mut written)?;

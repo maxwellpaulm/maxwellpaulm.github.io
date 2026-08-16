@@ -275,6 +275,30 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
   background: #FFFFFF;
 }}
 
+.ask-log {{
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 660px;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space) * 2);
+  margin: calc(var(--space) * 3) 0;
+}}
+.ask-card {{ border-left: 2px solid var(--rule); padding-left: calc(var(--space) * 1.5); }}
+.ask-q {{ color: var(--muted); }}
+.ask-src {{ color: var(--muted); font-size: 11px; }}
+.ask-src a {{ color: var(--accent); }}
+.ask-also {{ color: var(--muted); font-size: 12px; }}
+.ask-form {{
+  display: flex;
+  gap: var(--space);
+  align-items: center;
+  max-width: 660px;
+}}
+.ask-form input {{ flex: 1; }}
+.ask-prompt {{ font-family: var(--font-mono); color: var(--accent); }}
+
 /* The rail becomes a top bar before the grid gets cramped. */
 @media (max-width: 640px) {{
   .layout {{ grid-template-columns: 1fr; }}
@@ -624,6 +648,20 @@ mod tests {
             css.contains("#pm-mark:hover::after {"),
             "stylesheet missing the #pm-mark exhaust flame: {css}"
         );
+    }
+
+    #[test]
+    fn ask_terminal_class_names_agree_with_the_script_that_writes_them() {
+        // static/ask/terminal.js renders .ask-card/.ask-q/.ask-src/.ask-also
+        // into #ask-log; renaming either side alone should break the build.
+        let css = stylesheet();
+        const TERMINAL_JS: &str = include_str!("../../../static/ask/terminal.js");
+        for class in [".ask-log {", ".ask-card {", ".ask-src {", ".ask-also {", ".ask-form {"] {
+            assert!(css.contains(class), "stylesheet missing {class}: {css}");
+        }
+        for name in ["ask-log", "ask-card", "ask-q", "ask-src", "ask-also", "ask-input"] {
+            assert!(TERMINAL_JS.contains(name), "static/ask/terminal.js no longer mentions {name}");
+        }
     }
 
     #[test]

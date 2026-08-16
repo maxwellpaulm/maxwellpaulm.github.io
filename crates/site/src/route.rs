@@ -4,15 +4,17 @@ pub enum Route {
     About,
     Projects,
     Resume,
+    Ask,
     Demos,
 }
 
 impl Route {
-    pub const ALL: [Route; 5] = [
+    pub const ALL: [Route; 6] = [
         Route::Index,
         Route::About,
         Route::Projects,
         Route::Resume,
+        Route::Ask,
         Route::Demos,
     ];
 
@@ -22,6 +24,7 @@ impl Route {
             Route::About => "/about/",
             Route::Projects => "/projects/",
             Route::Resume => "/resume/",
+            Route::Ask => "/ask/",
             Route::Demos => "/demos/",
         }
     }
@@ -32,6 +35,7 @@ impl Route {
             Route::About => "about/index.html",
             Route::Projects => "projects/index.html",
             Route::Resume => "resume/index.html",
+            Route::Ask => "ask/index.html",
             Route::Demos => "demos/index.html",
         }
     }
@@ -42,6 +46,7 @@ impl Route {
             Route::About => "About",
             Route::Projects => "Projects",
             Route::Resume => "Resume",
+            Route::Ask => "Ask",
             Route::Demos => "Demos",
         }
     }
@@ -53,7 +58,7 @@ mod tests {
 
     #[test]
     fn every_route_has_a_rooted_path_and_html_output() {
-        assert_eq!(Route::ALL.len(), 5);
+        assert_eq!(Route::ALL.len(), 6);
         for r in Route::ALL {
             assert!(r.path().starts_with('/'), "{:?} path must be rooted", r);
             assert!(r.output_path().ends_with(".html"), "{:?} bad output", r);
