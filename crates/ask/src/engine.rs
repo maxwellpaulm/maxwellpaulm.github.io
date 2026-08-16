@@ -46,6 +46,10 @@ const BOOST_WEIGHT: usize = 3;
 const K1: f64 = 1.2;
 const B: f64 = 0.75;
 const TOP_ALSO: usize = 4;
+/// A runner-up must score at least this fraction of the best match to be
+/// shown as "also" — otherwise a merely nonzero-scoring, barely-related
+/// passage gets presented as if it were relevant.
+const ALSO_RELEVANCE_FLOOR: f64 = 0.35;
 
 pub struct Engine {
     passages: Vec<PassageIn>,
@@ -96,7 +100,7 @@ impl Engine {
     pub fn ask(&self, query: &str) -> Response {
         let norm = normalize(query);
         for (phrases, answer, source) in &self.intents {
-            if phrases.iter().any(|p| *p == norm) {
+            if phrases.contains(&norm) {
                 return Response::Answer {
                     title: String::new(),
                     text: answer.clone(),
@@ -134,11 +138,13 @@ impl Engine {
 
         match scored.first() {
             None => Response::Miss { suggest: self.suggest.clone() },
-            Some(&(_, best)) => {
+            Some(&(best_score, best)) => {
                 let p = &self.passages[best];
+                let floor = best_score * ALSO_RELEVANCE_FLOOR;
                 let also = scored
                     .iter()
                     .skip(1)
+                    .filter(|&&(score, _)| score >= floor)
                     .take(TOP_ALSO)
                     .map(|&(_, i)| Also {
                         title: self.passages[i].title.clone(),
@@ -218,6 +224,19 @@ mod tests {
     fn runner_ups_are_reported_as_also() {
         match engine().ask("amazon string matching") {
             Response::Answer { also, .. } => assert!(!also.is_empty(), "expected runner-ups"),
+            other => panic!("expected an answer, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn weakly_scoring_runner_ups_are_not_reported_as_also() {
+        // "aho corasick" only matches the alias boost on Transaction
+        // Tagging Engine — nothing else scores meaningfully, so `also`
+        // must not pad itself out with barely-related passages.
+        match engine().ask("aho corasick") {
+            Response::Answer { also, .. } => {
+                assert!(also.is_empty(), "expected no relevant runner-ups, got {also:?}")
+            }
             other => panic!("expected an answer, got {other:?}"),
         }
     }
