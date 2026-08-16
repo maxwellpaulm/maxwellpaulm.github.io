@@ -664,6 +664,21 @@ mod tests {
     }
 
     #[test]
+    fn ask_terminal_class_names_agree_with_the_script_that_writes_them() {
+        // static/ask/terminal.js renders .ask-card/.ask-q/.ask-src/.ask-also into
+        // #ask-log and reads #ask-form/#ask-input; renaming either side alone
+        // should break the build.
+        let css = stylesheet();
+        const TERMINAL_JS: &str = include_str!("../../../static/ask/terminal.js");
+        for name in ["ask-log", "ask-card", "ask-q", "ask-src", "ask-also", "ask-input"] {
+            assert!(TERMINAL_JS.contains(name), "static/ask/terminal.js no longer mentions {name}");
+        }
+        for class in [".ask-card {", ".ask-q {", ".ask-src {", ".ask-also {"] {
+            assert!(css.contains(class), "stylesheet missing {class}: {css}");
+        }
+    }
+
+    #[test]
     fn theme_is_explicit_not_os_driven() {
         let css = stylesheet();
         assert!(
