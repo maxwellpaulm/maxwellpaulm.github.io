@@ -94,7 +94,9 @@ mod tests {
         // script.
         let out = rail(&site(), Some(Route::Index)).into_string();
         assert!(
-            out.contains(r#"<div class="mono" id="pm-mark" title="definitely not a spaceship">PM</div>"#),
+            out.contains(
+                r#"<div class="mono" id="pm-mark" title="definitely not a spaceship">PM</div>"#
+            ),
             "PM mark must carry id=\"pm-mark\" for ship.js and the deadpan hover tooltip: {out}"
         );
     }
@@ -108,10 +110,7 @@ mod tests {
     #[test]
     fn rail_links_to_github_and_linkedin() {
         let out = rail(&site(), Some(Route::Index)).into_string();
-        assert!(
-            out.contains(r#"<div class="rail-links">"#),
-            "missing rail-links wrapper: {out}"
-        );
+        assert!(out.contains(r#"<div class="rail-links">"#), "missing rail-links wrapper: {out}");
         assert!(
             out.contains(r#"href="https://github.com/maxwellpaulm""#),
             "missing github href: {out}"
@@ -133,10 +132,7 @@ mod tests {
     fn rail_renders_an_accessible_theme_toggle_button() {
         let out = rail(&site(), Some(Route::Index)).into_string();
         assert!(out.contains("<button"), "toggle must be a real button element");
-        assert!(
-            out.contains(r#"aria-label="Toggle dark mode""#),
-            "missing accessible name: {out}"
-        );
+        assert!(out.contains(r#"aria-label="Toggle dark mode""#), "missing accessible name: {out}");
         assert!(out.contains("aria-pressed"), "missing aria-pressed state: {out}");
     }
 
@@ -144,7 +140,8 @@ mod tests {
     fn rail_button_defaults_to_the_server_rendered_light_state_label() {
         let out = rail(&site(), Some(Route::Index)).into_string();
         let btn_start = out.find("<button").expect("button present");
-        let btn_end = out.find("</button>").expect("closing button tag present") + "</button>".len();
+        let btn_end =
+            out.find("</button>").expect("closing button tag present") + "</button>".len();
         let button = &out[btn_start..btn_end];
         assert!(
             button.contains(">Dark<"),

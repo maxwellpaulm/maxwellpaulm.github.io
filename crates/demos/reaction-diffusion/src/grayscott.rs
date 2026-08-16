@@ -89,12 +89,12 @@ impl Grid {
                 let a = self.a[i];
                 let b = self.b[i];
                 let abb = a * b * b;
-                self.a_next[i] =
-                    (a + (DA * self.laplace(&self.a, x, y) - abb + feed * (1.0 - a)) * DT)
-                        .clamp(0.0, 1.0);
-                self.b_next[i] =
-                    (b + (DB * self.laplace(&self.b, x, y) + abb - (kill + feed) * b) * DT)
-                        .clamp(0.0, 1.0);
+                self.a_next[i] = (a
+                    + (DA * self.laplace(&self.a, x, y) - abb + feed * (1.0 - a)) * DT)
+                    .clamp(0.0, 1.0);
+                self.b_next[i] = (b
+                    + (DB * self.laplace(&self.b, x, y) + abb - (kill + feed) * b) * DT)
+                    .clamp(0.0, 1.0);
             }
         }
         std::mem::swap(&mut self.a, &mut self.a_next);
@@ -173,10 +173,7 @@ mod tests {
         let edge = g.b_at(5, 4);
         let diagonal = g.b_at(5, 5);
         assert!((edge - 0.1).abs() < 1e-6, "edge-adjacent neighbour: {edge}");
-        assert!(
-            (diagonal - 0.025).abs() < 1e-6,
-            "diagonal neighbour: {diagonal}"
-        );
+        assert!((diagonal - 0.025).abs() < 1e-6, "diagonal neighbour: {diagonal}");
     }
 
     /// A single cell seeded at the right edge (`half = 0`, so the seed

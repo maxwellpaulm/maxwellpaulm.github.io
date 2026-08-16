@@ -75,7 +75,9 @@ mod tests {
         assert!(out.contains(AHO_CORASICK), "demo link missing");
         assert!(out.contains("Aho–Corasick"));
         assert!(
-            out.contains("Build the automaton, watch failure links form, and stream text through it."),
+            out.contains(
+                "Build the automaton, watch failure links form, and stream text through it."
+            ),
             "summary missing: {out}"
         );
     }

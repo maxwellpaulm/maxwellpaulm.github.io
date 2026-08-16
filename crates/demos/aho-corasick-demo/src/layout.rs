@@ -7,7 +7,13 @@ use crate::automaton::Automaton;
 /// Post-order visit: leaves consume the next free integer x slot
 /// left-to-right (children visited in insertion order); internal nodes
 /// take the mean x of their children. Returns the x assigned to `s`.
-fn visit(s: usize, a: &Automaton, children: &[Vec<usize>], next_x: &mut f32, pos: &mut [(f32, f32)]) -> f32 {
+fn visit(
+    s: usize,
+    a: &Automaton,
+    children: &[Vec<usize>],
+    next_x: &mut f32,
+    pos: &mut [(f32, f32)],
+) -> f32 {
     let y = a.depth(s) as f32;
     let x = if children[s].is_empty() {
         let x = *next_x;

@@ -19,10 +19,7 @@ pub struct Simulation {
 impl Simulation {
     #[wasm_bindgen(constructor)]
     pub fn new(width: usize, height: usize) -> Simulation {
-        Simulation {
-            grid: Grid::new(width, height),
-            pixels: vec![0; width * height * 4],
-        }
+        Simulation { grid: Grid::new(width, height), pixels: vec![0; width * height * 4] }
     }
 
     /// Grid width in cells.

@@ -94,7 +94,15 @@ impl Engine {
             .into_iter()
             .map(|i| (i.match_.iter().map(|m| normalize(m)).collect(), i.answer, i.source))
             .collect();
-        Ok(Engine { passages: index.passages, docs, lens, avg_len, df, intents, suggest: index.suggest })
+        Ok(Engine {
+            passages: index.passages,
+            docs,
+            lens,
+            avg_len,
+            df,
+            intents,
+            suggest: index.suggest,
+        })
     }
 
     pub fn ask(&self, query: &str) -> Response {

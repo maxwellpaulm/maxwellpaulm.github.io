@@ -40,12 +40,20 @@ pub fn index_json(site: &Site, ask: &AskContent) -> Result<String> {
         boost: Vec::new(),
     });
     for para in &site.about {
-        passages.push(Passage { title: "About", text: para.clone(), source: "/about/", boost: Vec::new() });
+        passages.push(Passage {
+            title: "About",
+            text: para.clone(),
+            source: "/about/",
+            boost: Vec::new(),
+        });
     }
     for work in &site.work {
         passages.push(Passage {
             title: &work.title,
-            text: format!("{} · {} · {} — {} {}", work.title, work.org, work.year, work.summary, work.detail),
+            text: format!(
+                "{} · {} · {} — {} {}",
+                work.title, work.org, work.year, work.summary, work.detail
+            ),
             source: "/projects/",
             boost: Vec::new(),
         });
@@ -53,14 +61,24 @@ pub fn index_json(site: &Site, ask: &AskContent) -> Result<String> {
     for note in &ask.note {
         let mut boost: Vec<&str> = vec![note.q.as_str()];
         boost.extend(note.aliases.iter().map(String::as_str));
-        passages.push(Passage { title: &note.q, text: note.a.clone(), source: &note.source, boost });
+        passages.push(Passage {
+            title: &note.q,
+            text: note.a.clone(),
+            source: &note.source,
+            boost,
+        });
     }
     let intents = ask
         .intent
         .iter()
         .map(|i| IntentOut { match_: &i.match_, answer: &i.answer, source: &i.source })
         .collect();
-    Ok(serde_json::to_string(&Index { passages, intents, suggest: &ask.suggest, examples: &ask.examples })?)
+    Ok(serde_json::to_string(&Index {
+        passages,
+        intents,
+        suggest: &ask.suggest,
+        examples: &ask.examples,
+    })?)
 }
 
 #[cfg(test)]
@@ -136,8 +154,14 @@ mod tests {
                 site.work.iter().filter(|w| w.org == "Amazon").map(|w| w.title.as_str()).collect();
             match real_engine().ask("what did paul build at amazon?") {
                 Response::Answer { title, source, .. } => {
-                    assert_eq!(source, "/projects/", "expected an Amazon work/project passage, got title {title:?}");
-                    assert_ne!(title, "Now", "regression: the generic bio passage outranked the Amazon work");
+                    assert_eq!(
+                        source, "/projects/",
+                        "expected an Amazon work/project passage, got title {title:?}"
+                    );
+                    assert_ne!(
+                        title, "Now",
+                        "regression: the generic bio passage outranked the Amazon work"
+                    );
                     assert!(
                         amazon_titles.contains(&title.as_str()) || title.to_lowercase().contains("amazon"),
                         "expected an Amazon-relevant title (one of {amazon_titles:?}, or containing \"amazon\"), got {title:?}"
@@ -170,7 +194,9 @@ mod tests {
         #[test]
         fn nonsense_query_misses_with_suggestions() {
             match real_engine().ask("quantum blockchain golf") {
-                Response::Miss { suggest } => assert!(!suggest.is_empty(), "expected suggest terms"),
+                Response::Miss { suggest } => {
+                    assert!(!suggest.is_empty(), "expected suggest terms")
+                }
                 other => panic!("expected a miss, got {other:?}"),
             }
         }
@@ -184,7 +210,10 @@ mod tests {
             for q in ["where does paul work", "where does he work", "what does he do now"] {
                 match real_engine().ask(q) {
                     Response::Answer { text, .. } => {
-                        assert!(text.contains("P-1 AI"), "query {q:?} did not answer with the current job: {text:?}")
+                        assert!(
+                            text.contains("P-1 AI"),
+                            "query {q:?} did not answer with the current job: {text:?}"
+                        )
                     }
                     other => panic!("expected an answer for {q:?}, got {other:?}"),
                 }
@@ -236,7 +265,10 @@ mod tests {
         fn apostrophe_questions_no_longer_hijack_the_education_note() {
             match real_engine().ask("what's your email address?") {
                 Response::Answer { title, .. } => {
-                    assert_ne!(title, "What's Paul's education?", "regression: apostrophe 's' token hijack")
+                    assert_ne!(
+                        title, "What's Paul's education?",
+                        "regression: apostrophe 's' token hijack"
+                    )
                 }
                 Response::Miss { .. } => {} // honest miss is fine; the wrong answer is what regressed before
             }
@@ -254,7 +286,9 @@ mod tests {
             for example in &ask.examples {
                 match engine.ask(example) {
                     Response::Answer { .. } => {}
-                    Response::Miss { .. } => panic!("example {example:?} misses instead of answering"),
+                    Response::Miss { .. } => {
+                        panic!("example {example:?} misses instead of answering")
+                    }
                 }
             }
         }

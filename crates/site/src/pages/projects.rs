@@ -38,10 +38,7 @@ mod tests {
         let out = render(&site).into_string();
         assert!(out.contains("forking the platform"), "Archie detail missing");
         assert!(out.contains("request-scoped tokens"), "Gateway detail missing");
-        assert!(
-            out.contains("without touching the pipeline"),
-            "Duplicate-invoice detail missing"
-        );
+        assert!(out.contains("without touching the pipeline"), "Duplicate-invoice detail missing");
         assert!(out.contains("billion book titles"), "EU compliance detail missing");
         assert!(out.contains("hours to 90 seconds"), "Transaction tagging detail missing");
     }

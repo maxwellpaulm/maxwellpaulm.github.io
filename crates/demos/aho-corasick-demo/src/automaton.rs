@@ -33,11 +33,7 @@ const MAX_PATTERN_LEN: usize = 10;
 /// wasm wrapper, converting match end positions to text ranges) must fold
 /// with this exact function or its lengths will disagree with the trie's.
 pub fn fold(pattern: &str) -> Vec<u8> {
-    pattern
-        .bytes()
-        .filter(|b| b.is_ascii_alphabetic())
-        .map(|b| b.to_ascii_lowercase())
-        .collect()
+    pattern.bytes().filter(|b| b.is_ascii_alphabetic()).map(|b| b.to_ascii_lowercase()).collect()
 }
 
 struct Node {
@@ -110,7 +106,9 @@ impl Automaton {
                 let mut f = nodes[u].fail;
                 let fail_of_c = loop {
                     // f is always strictly shallower than u, so t can never be c itself.
-                    if let Some(t) = nodes[f].children.iter().copied().find(|&t| nodes[t].label == label) {
+                    if let Some(t) =
+                        nodes[f].children.iter().copied().find(|&t| nodes[t].label == label)
+                    {
                         break t;
                     }
                     if f == 0 {
@@ -347,10 +345,7 @@ mod tests {
             found.extend(c.step(b).matches);
         }
         assert_eq!(found, vec![(0, 2)]);
-        assert!(matches!(
-            Automaton::build(&["123"]),
-            Err(BuildError::EmptyPattern)
-        ));
+        assert!(matches!(Automaton::build(&["123"]), Err(BuildError::EmptyPattern)));
     }
 
     #[test]
@@ -377,24 +372,17 @@ mod tests {
         // only through the wrapper (which can't run outside a wasm target;
         // see `lib.rs`'s test module).
         assert_eq!(BuildError::NoPatterns.to_string(), "no patterns given");
-        assert_eq!(
-            BuildError::TooManyPatterns.to_string(),
-            "too many patterns (max 8)"
-        );
-        assert_eq!(
-            BuildError::PatternTooLong.to_string(),
-            "pattern too long (max 10 letters)"
-        );
+        assert_eq!(BuildError::TooManyPatterns.to_string(), "too many patterns (max 8)");
+        assert_eq!(BuildError::PatternTooLong.to_string(), "pattern too long (max 10 letters)");
         // `Automaton` has no `Debug` impl, so `Result::unwrap_err` (which
         // requires the `Ok` side to be `Debug`) isn't available here; match
         // instead, as the wrapper's `.map_err` effectively does.
         let nine = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
         let Err(err) = Automaton::build(&nine) else { panic!("9 patterns should be rejected") };
         assert_eq!(err.to_string(), "too many patterns (max 8)");
-        let Err(err) = Automaton::build(&["123"]) else { panic!("digits-only pattern should be rejected") };
-        assert_eq!(
-            err.to_string(),
-            "a pattern has no letters left after removing non-letters"
-        );
+        let Err(err) = Automaton::build(&["123"]) else {
+            panic!("digits-only pattern should be rejected")
+        };
+        assert_eq!(err.to_string(), "a pattern has no letters left after removing non-letters");
     }
 }

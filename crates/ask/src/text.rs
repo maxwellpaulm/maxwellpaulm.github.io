@@ -4,14 +4,14 @@
 const STOPWORDS: &[&str] = &[
     "a", "about", "after", "again", "all", "also", "am", "an", "and", "any", "are", "as", "at",
     "be", "because", "been", "before", "being", "between", "both", "but", "by", "can", "could",
-    "did", "do", "does", "doing", "down", "during", "each", "few", "for", "from", "further",
-    "get", "had", "has", "have", "having", "he", "her", "here", "hers", "him", "his", "how", "i",
-    "if", "in", "into", "is", "it", "its", "just", "like", "me", "more", "most", "my", "no",
-    "nor", "not", "now", "of", "off", "on", "once", "only", "or", "other", "our", "out", "over",
-    "own", "same", "she", "should", "so", "some", "such", "than", "that", "the", "their", "them",
-    "then", "there", "these", "they", "this", "those", "through", "to", "too", "under", "until",
-    "up", "us", "very", "was", "we", "were", "what", "when", "where", "which", "while", "who",
-    "whom", "why", "will", "with", "would", "you", "your", "yours",
+    "did", "do", "does", "doing", "down", "during", "each", "few", "for", "from", "further", "get",
+    "had", "has", "have", "having", "he", "her", "here", "hers", "him", "his", "how", "i", "if",
+    "in", "into", "is", "it", "its", "just", "like", "me", "more", "most", "my", "no", "nor",
+    "not", "now", "of", "off", "on", "once", "only", "or", "other", "our", "out", "over", "own",
+    "same", "she", "should", "so", "some", "such", "than", "that", "the", "their", "them", "then",
+    "there", "these", "they", "this", "those", "through", "to", "too", "under", "until", "up",
+    "us", "very", "was", "we", "were", "what", "when", "where", "which", "while", "who", "whom",
+    "why", "will", "with", "would", "you", "your", "yours",
 ];
 
 /// The site owner's own name. On a single-person site, "paul" and
@@ -40,9 +40,7 @@ pub fn tokenize(s: &str) -> Vec<String> {
         // Splitting on the apostrophe in "what's"/"paul's" leaves a bare
         // "s" (and "I'd"/"we'll" leave "d"/"ll"): single-character tokens
         // carry no signal and are dropped along with the stopwords.
-        .filter(|w| {
-            w.len() > 1 && !STOPWORDS.contains(w) && !NAME_STOPWORDS.contains(w)
-        })
+        .filter(|w| w.len() > 1 && !STOPWORDS.contains(w) && !NAME_STOPWORDS.contains(w))
         .map(stem)
         .collect()
 }

@@ -117,7 +117,8 @@ mod tests {
     #[test]
     fn page_emits_a_complete_document() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::About.path()), "About", html! { p { "hello" } }).into_string();
+        let out =
+            page(&site, Some(Route::About.path()), "About", html! { p { "hello" } }).into_string();
         assert!(out.starts_with("<!DOCTYPE html>"), "missing doctype: {out}");
         assert!(out.contains(r#"<html lang="en">"#), "missing lang attribute");
         assert!(out.contains(&format!("<title>About · {}</title>", site.name)));
@@ -133,7 +134,8 @@ mod tests {
         // External same-origin scripts are covered by the CSP's
         // `script-src 'self'`, so this adds no inline-script hash.
         let site = fixture_site();
-        let out = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
+        let out =
+            page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
         assert!(
             out.contains(r#"<script defer src="/crt.js"></script>"#),
             "missing crt.js easter-egg script tag: {out}"
@@ -145,7 +147,8 @@ mod tests {
         // static/ship.js arms the click trigger on the rail's PM mark; like
         // crt.js it is external and same-origin, covered by `script-src 'self'`.
         let site = fixture_site();
-        let out = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
+        let out =
+            page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
         assert!(
             out.contains(r#"<script defer src="/ship.js"></script>"#),
             "missing ship.js easter-egg script tag: {out}"
@@ -155,7 +158,8 @@ mod tests {
     #[test]
     fn page_makes_no_external_requests() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
+        let out =
+            page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
         // site.url itself is https:// (canonical/OG); nothing else should be.
         for host in ["http://", "https://fonts.", "cdn.", "googleapis"] {
             assert!(!out.contains(host), "external reference {host} found in output");
@@ -165,7 +169,8 @@ mod tests {
     #[test]
     fn page_emits_description_canonical_and_icons() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
+        let out =
+            page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
         assert!(
             out.contains(&format!(r#"<meta name="description" content="{}">"#, site.description)),
             "missing description meta: {out}"
@@ -181,8 +186,10 @@ mod tests {
     #[test]
     fn canonical_url_differs_between_routes() {
         let site = fixture_site();
-        let index = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
-        let about = page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
+        let index =
+            page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
+        let about =
+            page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
 
         let index_canonical = format!(r#"<link rel="canonical" href="{}/">"#, site.url);
         let about_canonical = format!(r#"<link rel="canonical" href="{}/about/">"#, site.url);
@@ -195,7 +202,8 @@ mod tests {
     #[test]
     fn page_emits_og_and_twitter_tags() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::Projects.path()), "Projects", html! { p { "x" } }).into_string();
+        let out = page(&site, Some(Route::Projects.path()), "Projects", html! { p { "x" } })
+            .into_string();
         assert!(out.contains(r#"<meta property="og:type" content="website">"#));
         assert!(out.contains(&format!(r#"<meta property="og:site_name" content="{}">"#, site.name)));
         assert!(out.contains(&format!(
@@ -206,10 +214,9 @@ mod tests {
             r#"<meta property="og:description" content="{}">"#,
             site.description
         )));
-        assert!(out.contains(&format!(
-            r#"<meta property="og:url" content="{}/projects/">"#,
-            site.url
-        )));
+        assert!(
+            out.contains(&format!(r#"<meta property="og:url" content="{}/projects/">"#, site.url))
+        );
         assert!(out.contains(&format!(
             r#"<meta property="og:image" content="{}/og-image.png">"#,
             site.url
@@ -220,19 +227,19 @@ mod tests {
     #[test]
     fn og_title_agrees_with_the_document_title() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::Resume.path()), "Resume", html! { p { "x" } }).into_string();
+        let out =
+            page(&site, Some(Route::Resume.path()), "Resume", html! { p { "x" } }).into_string();
         assert!(out.contains(&format!("<title>Resume · {}</title>", site.name)));
-        assert!(out.contains(&format!(
-            r#"<meta property="og:title" content="Resume · {}">"#,
-            site.name
-        )));
+        assert!(out
+            .contains(&format!(r#"<meta property="og:title" content="Resume · {}">"#, site.name)));
     }
 
     #[test]
     fn title_and_og_title_come_from_site_name_not_a_hardcoded_literal() {
         let mut site = fixture_site();
         site.name = "Someone Else Entirely".to_string();
-        let out = page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
+        let out =
+            page(&site, Some(Route::About.path()), "About", html! { p { "x" } }).into_string();
 
         assert!(
             out.contains("<title>About · Someone Else Entirely</title>"),
@@ -254,17 +261,15 @@ mod tests {
     #[test]
     fn head_applies_the_stored_theme_before_first_paint() {
         let site = fixture_site();
-        let out = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
+        let out =
+            page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
         // A double-quoted fragment, verbatim: if PreEscaped were removed, the
         // `"` characters would come out as `&quot;` and this would fail.
         assert!(
             out.contains(r#"localStorage.getItem("theme")"#),
             "missing inline theme-detection script: {out}"
         );
-        assert!(
-            !out.contains("&quot;"),
-            "script body was HTML-escaped, corrupting the JS: {out}"
-        );
+        assert!(!out.contains("&quot;"), "script body was HTML-escaped, corrupting the JS: {out}");
     }
 
     #[test]
@@ -314,7 +319,10 @@ mod tests {
             r#"<meta property="og:description" content="{}">"#,
             site.description
         )));
-        assert!(out.contains(&format!(r#"<meta property="og:image" content="{}/og-image.png">"#, site.url)));
+        assert!(out.contains(&format!(
+            r#"<meta property="og:image" content="{}/og-image.png">"#,
+            site.url
+        )));
     }
 
     #[test]

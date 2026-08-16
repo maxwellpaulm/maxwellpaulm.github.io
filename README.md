@@ -25,7 +25,7 @@ Concretely, the build refuses to produce a site where:
 - an inline script changes without the Content-Security-Policy being updated to
   match (see [Security](#security)).
 
-161 tests across four crates. Most of them exist to pin an invariant that would
+164 tests across four crates. Most of them exist to pin an invariant that would
 otherwise be silently breakable — including cross-file ones that assert a CSS
 class the JavaScript writes is actually defined in the stylesheet.
 
@@ -47,7 +47,8 @@ docs/            design specs and implementation plans
 ```sh
 ./scripts/build-wasm.sh      # compile the demo crates to wasm (needs wasm-bindgen 0.2.127)
 cargo run -p site            # render the site into dist/
-cargo test --all             # 161 tests
+cargo test --all             # 164 tests
+cargo fmt --all              # rustfmt.toml keeps the codebase's compact style
 ```
 
 `cargo run -p site -- --strict` is what CI runs: it additionally fails if the
@@ -134,7 +135,7 @@ is pinned to a full commit SHA rather than a tag.
 
 ## Deploy
 
-Push to `master`. The workflow lints, tests, fetches and renders the resume,
+Push to `master`. The workflow checks formatting, lints, tests, fetches and renders the resume,
 builds the wasm, generates the site, verifies the CSP hashes and that the
 expected artifacts actually shipped, then publishes to GitHub Pages. Cloudflare
 sits in front for the edge headers.

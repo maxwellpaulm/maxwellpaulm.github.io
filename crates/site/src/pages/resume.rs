@@ -89,14 +89,8 @@ mod tests {
     #[test]
     fn resume_images_carry_a_meaningful_alt_naming_the_page_number() {
         let out = render(&crate::content::fixture_site(), &pages()).into_string();
-        assert!(
-            out.contains(r#"alt="Resume, page 1 of 2""#),
-            "page 1 alt missing or empty: {out}"
-        );
-        assert!(
-            out.contains(r#"alt="Resume, page 2 of 2""#),
-            "page 2 alt missing or empty: {out}"
-        );
+        assert!(out.contains(r#"alt="Resume, page 1 of 2""#), "page 1 alt missing or empty: {out}");
+        assert!(out.contains(r#"alt="Resume, page 2 of 2""#), "page 2 alt missing or empty: {out}");
     }
 
     #[test]

@@ -193,11 +193,7 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
         &sitemap_xml(&site, &[pages::demos::REACTION_DIFFUSION, pages::demos::AHO_CORASICK]),
         &mut written,
     )?;
-    write(
-        &out.join("404.html"),
-        &pages::not_found::render(&site).into_string(),
-        &mut written,
-    )?;
+    write(&out.join("404.html"), &pages::not_found::render(&site).into_string(), &mut written)?;
     write(
         &out.join("demos/reaction-diffusion/index.html"),
         &pages::demo_reaction_diffusion::render(&site).into_string(),
@@ -383,13 +379,10 @@ mod tests {
 
         for route in Route::ALL {
             let html = std::fs::read_to_string(tmp.join(route.output_path())).unwrap();
-            let canonical = format!(r#"<link rel="canonical" href="{}{}">"#, site.url, route.path());
+            let canonical =
+                format!(r#"<link rel="canonical" href="{}{}">"#, site.url, route.path());
             assert!(html.contains(&canonical), "{:?} missing its canonical: {html}", route);
-            assert!(
-                !html.contains("noindex"),
-                "{:?} must not be noindexed: {html}",
-                route
-            );
+            assert!(!html.contains("noindex"), "{:?} must not be noindexed: {html}", route);
         }
 
         std::fs::remove_dir_all(&tmp).ok();
@@ -423,7 +416,8 @@ mod tests {
         // distinct, correct canonical of its own.
         for route in Route::ALL {
             let html = std::fs::read_to_string(tmp.join(route.output_path())).unwrap();
-            let canonical = format!(r#"<link rel="canonical" href="{}{}">"#, site.url, route.path());
+            let canonical =
+                format!(r#"<link rel="canonical" href="{}{}">"#, site.url, route.path());
             assert!(html.contains(&canonical), "{:?} missing its canonical: {html}", route);
         }
 
@@ -604,8 +598,14 @@ mod tests {
 
         let pages = resume_artifacts(&dir).unwrap();
         assert_eq!(pages.len(), 1);
-        assert_eq!(pages[0].width, 612, "width must be parsed from the svg root, ignoring the unit");
-        assert_eq!(pages[0].height, 792, "height must be parsed from the svg root, ignoring the unit");
+        assert_eq!(
+            pages[0].width, 612,
+            "width must be parsed from the svg root, ignoring the unit"
+        );
+        assert_eq!(
+            pages[0].height, 792,
+            "height must be parsed from the svg root, ignoring the unit"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 

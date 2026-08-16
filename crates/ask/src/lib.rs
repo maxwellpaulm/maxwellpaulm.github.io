@@ -20,8 +20,7 @@ impl Terminal {
 
     /// Returns the response as JSON — rendering is terminal.js's job.
     pub fn ask(&self, query: &str) -> String {
-        serde_json::to_string(&self.engine.ask(query)).unwrap_or_else(|_| {
-            r#"{"kind":"miss","suggest":[]}"#.to_string()
-        })
+        serde_json::to_string(&self.engine.ask(query))
+            .unwrap_or_else(|_| r#"{"kind":"miss","suggest":[]}"#.to_string())
     }
 }

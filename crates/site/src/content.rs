@@ -75,8 +75,8 @@ pub struct Note {
 
 impl AskContent {
     pub fn load(path: &Path) -> Result<Self> {
-        let raw = std::fs::read_to_string(path)
-            .with_context(|| format!("reading {}", path.display()))?;
+        let raw =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
         Self::parse(&raw, path)
     }
 
@@ -105,12 +105,20 @@ impl AskContent {
                 bail!("{}: every [[intent]] needs a non-empty `match` list", path.display());
             }
             if !intent.source.starts_with('/') {
-                bail!("{}: intent `source` must be a rooted path, got {:?}", path.display(), intent.source);
+                bail!(
+                    "{}: intent `source` must be a rooted path, got {:?}",
+                    path.display(),
+                    intent.source
+                );
             }
         }
         for note in &self.note {
             if !note.source.starts_with('/') {
-                bail!("{}: note `source` must be a rooted path, got {:?}", path.display(), note.source);
+                bail!(
+                    "{}: note `source` must be a rooted path, got {:?}",
+                    path.display(),
+                    note.source
+                );
             }
         }
         Ok(())
@@ -119,8 +127,8 @@ impl AskContent {
 
 impl Site {
     pub fn load(path: &Path) -> Result<Self> {
-        let raw = std::fs::read_to_string(path)
-            .with_context(|| format!("reading {}", path.display()))?;
+        let raw =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
         let site: Site =
             toml::from_str(&raw).with_context(|| format!("parsing {}", path.display()))?;
         site.validate(path)?;
@@ -148,7 +156,8 @@ pub fn fixture_site() -> Site {
 
 #[cfg(test)]
 pub fn fixture_ask() -> AskContent {
-    AskContent::load(std::path::Path::new("../../content/ask.toml")).expect("content/ask.toml loads")
+    AskContent::load(std::path::Path::new("../../content/ask.toml"))
+        .expect("content/ask.toml loads")
 }
 
 #[cfg(test)]
@@ -196,9 +205,8 @@ surprise = "should not parse"
     fn empty_work_is_rejected() {
         let mut site = fixture_site();
         site.work = vec![];
-        let err = site
-            .validate(Path::new("content/site.toml"))
-            .expect_err("empty work must be rejected");
+        let err =
+            site.validate(Path::new("content/site.toml")).expect_err("empty work must be rejected");
         assert!(err.to_string().contains("work"), "got: {err}");
         assert!(err.to_string().contains("site.toml"), "got: {err}");
     }

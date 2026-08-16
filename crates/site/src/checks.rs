@@ -31,10 +31,7 @@ fn css_references(css: &str) -> Vec<String> {
 
 /// Maps a rooted site path to the file that must exist in `out`.
 fn target(out: &Path, link: &str) -> PathBuf {
-    let link = link
-        .split(['#', '?'])
-        .next()
-        .expect("split always yields at least one element");
+    let link = link.split(['#', '?']).next().expect("split always yields at least one element");
     let rel = link.trim_start_matches('/');
     if link.ends_with('/') || link.is_empty() {
         out.join(rel).join("index.html")
@@ -58,7 +55,13 @@ fn files_with_extension(dir: &Path, ext: &str, acc: &mut Vec<PathBuf>) -> Result
 
 /// Checks each rooted link's resolved target exists in `out`, recording any
 /// miss (attributed to `source`) in `broken`.
-fn check_links(source: &Path, links: &[String], out: &Path, strict: bool, broken: &mut BTreeSet<String>) {
+fn check_links(
+    source: &Path,
+    links: &[String],
+    out: &Path,
+    strict: bool,
+    broken: &mut BTreeSet<String>,
+) {
     for link in links {
         if !link.starts_with('/') {
             continue; // external, anchor, or relative — out of scope
@@ -171,10 +174,7 @@ mod tests {
 
     #[test]
     fn strips_fragment_before_resolving() {
-        let dir = scaffold(
-            "checks-fragment",
-            r#"<a href="/resume/#experience">Experience</a>"#,
-        );
+        let dir = scaffold("checks-fragment", r#"<a href="/resume/#experience">Experience</a>"#);
         std::fs::create_dir_all(dir.join("resume")).unwrap();
         std::fs::write(dir.join("resume/index.html"), "<!DOCTYPE html>").unwrap();
 

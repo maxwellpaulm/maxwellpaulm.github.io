@@ -593,7 +593,10 @@ mod tests {
         // colour and the accent underline against that same background.
         for (name, p) in [("light", LIGHT), ("dark", DARK)] {
             let ink_ratio = contrast_ratio(p.ink, p.rule);
-            assert!(ink_ratio >= 4.5, "{name} ink-on-rule is {ink_ratio:.2}:1, below WCAG AA 4.5:1");
+            assert!(
+                ink_ratio >= 4.5,
+                "{name} ink-on-rule is {ink_ratio:.2}:1, below WCAG AA 4.5:1"
+            );
             let accent_ratio = contrast_ratio(p.accent, p.rule);
             assert!(
                 accent_ratio >= 4.5,
@@ -638,7 +641,10 @@ mod tests {
         assert!(css.contains("@keyframes crt-enter"), "stylesheet missing CRT entry glitch: {css}");
         let dark = css.find(r#":root[data-theme="dark"]"#).expect("dark block present");
         let crt = css.find(":root[data-crt] {").expect("CRT block present");
-        assert!(crt > dark, "CRT token block must come after the dark block to win on source order");
+        assert!(
+            crt > dark,
+            "CRT token block must come after the dark block to win on source order"
+        );
     }
 
     #[test]
@@ -680,8 +686,14 @@ mod tests {
         // into a crosshair and tips the mark into a launch pose with a tiny
         // accent exhaust flame (rail.rs adds the deadpan tooltip).
         let css = stylesheet();
-        assert!(css.contains("cursor: crosshair;"), "stylesheet missing the crosshair cursor: {css}");
-        assert!(css.contains("#pm-mark:hover {"), "stylesheet missing the #pm-mark launch pose: {css}");
+        assert!(
+            css.contains("cursor: crosshair;"),
+            "stylesheet missing the crosshair cursor: {css}"
+        );
+        assert!(
+            css.contains("#pm-mark:hover {"),
+            "stylesheet missing the #pm-mark launch pose: {css}"
+        );
         assert!(
             css.contains("#pm-mark:hover::after {"),
             "stylesheet missing the #pm-mark exhaust flame: {css}"
@@ -695,7 +707,8 @@ mod tests {
         // until the visitor taps elsewhere. The crosshair cursor is equally
         // meaningless without a pointer.
         let css = stylesheet();
-        let gate = css.find("@media (hover: hover) and (pointer: fine)").expect("hover gate present");
+        let gate =
+            css.find("@media (hover: hover) and (pointer: fine)").expect("hover gate present");
         for rule in ["#pm-mark:hover {", "#pm-mark:hover::after {", "cursor: crosshair;"] {
             let at = css.find(rule).unwrap_or_else(|| panic!("stylesheet missing {rule}"));
             assert!(at > gate, "{rule} must sit inside the hover/pointer media gate: {css}");
@@ -757,7 +770,8 @@ mod tests {
         // text against the CSS — it doesn't inspect ask.rs's page markup.
         let css = stylesheet();
         const TERMINAL_JS: &str = include_str!("../../../static/ask/terminal.js");
-        for name in ["ask-log", "ask-form", "ask-card", "ask-q", "ask-src", "ask-also", "ask-input"] {
+        for name in ["ask-log", "ask-form", "ask-card", "ask-q", "ask-src", "ask-also", "ask-input"]
+        {
             assert!(TERMINAL_JS.contains(name), "static/ask/terminal.js no longer mentions {name}");
         }
         for class in [".ask-card {", ".ask-q {", ".ask-src {", ".ask-also {"] {
@@ -768,10 +782,7 @@ mod tests {
     #[test]
     fn theme_is_explicit_not_os_driven() {
         let css = stylesheet();
-        assert!(
-            css.contains(r#"[data-theme="dark"]"#),
-            "missing explicit dark theme selector"
-        );
+        assert!(css.contains(r#"[data-theme="dark"]"#), "missing explicit dark theme selector");
         assert!(
             !css.contains("prefers-color-scheme"),
             "OS-driven theming must not select the theme; prefers-color-scheme should be gone"

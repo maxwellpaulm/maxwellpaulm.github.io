@@ -1,0 +1,7 @@
+# The codebase was written compact — single-line struct literals, tight enum
+# variants — and rustfmt's default width heuristics would explode roughly a
+# hundred of those vertically. `Max` lets every construct use the full line
+# before wrapping, which matches how this code was already written, so the
+# formatter enforces the existing style instead of imposing a new one.
+max_width = 100
+use_small_heuristics = "Max"
