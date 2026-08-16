@@ -665,9 +665,11 @@ mod tests {
 
     #[test]
     fn ask_terminal_class_names_agree_with_the_script_that_writes_them() {
-        // static/ask/terminal.js renders .ask-card/.ask-q/.ask-src/.ask-also into
-        // #ask-log and reads #ask-form/#ask-input; renaming either side alone
-        // should break the build.
+        // Cross-checks the id/class strings static/ask/terminal.js hard-codes
+        // (ask-log/ask-card/ask-q/ask-src/ask-also/ask-input) against the
+        // classes this stylesheet defines; renaming either side alone
+        // should break the build. This only compares terminal.js's source
+        // text against the CSS — it doesn't inspect ask.rs's page markup.
         let css = stylesheet();
         const TERMINAL_JS: &str = include_str!("../../../static/ask/terminal.js");
         for name in ["ask-log", "ask-card", "ask-q", "ask-src", "ask-also", "ask-input"] {

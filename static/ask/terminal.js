@@ -42,37 +42,32 @@ async function main() {
   };
 
   let terminal = null;
-  try {
-    const [, indexJson] = await Promise.all([
-      init(),
-      fetch("/ask/index.json").then((r) => {
-        if (!r.ok) throw new Error("index fetch failed: " + r.status);
-        return r.text();
-      }),
-    ]);
-    terminal = new Terminal(indexJson);
-  } catch (err) {
-    card([el("div", "", "the terminal failed to load — everything it knows is on /about/ and /projects/.")]);
-    return;
-  }
-
-  card([
-    el("div", "", "ask about my work — e.g. " + EXAMPLES.map((e) => '"' + e + '"').join(", ")),
-  ]);
-
   const history = [];
   let historyAt = -1;
 
+  // Wired unconditionally, before the terminal has even loaded: a failed
+  // load must still preventDefault() on submit, or a visitor who presses
+  // Enter after reading the fallback card gets a native form navigation
+  // that wipes it.
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!terminal) return;
     const query = input.value.trim();
     if (!query) return;
     history.push(query);
     historyAt = history.length;
     input.value = "";
 
-    const result = JSON.parse(terminal.ask(query));
     const children = [el("div", "ask-q", "> " + query)];
+    let result;
+    try {
+      result = JSON.parse(terminal.ask(query));
+    } catch (err) {
+      console.error(err);
+      children.push(el("div", "", "the search failed — everything it knows is on /about/ and /projects/."));
+      card(children);
+      return;
+    }
     if (result.kind === "answer") {
       if (result.title) children.push(el("div", "", result.title));
       children.push(el("div", "", result.text));
@@ -97,6 +92,25 @@ async function main() {
       event.preventDefault();
     }
   });
+
+  try {
+    const [, indexJson] = await Promise.all([
+      init(),
+      fetch("/ask/index.json").then((r) => {
+        if (!r.ok) throw new Error("index fetch failed: " + r.status);
+        return r.text();
+      }),
+    ]);
+    terminal = new Terminal(indexJson);
+  } catch (err) {
+    console.error(err);
+    card([el("div", "", "the terminal failed to load — everything it knows is on /about/ and /projects/.")]);
+    return;
+  }
+
+  card([
+    el("div", "", "ask about my work — e.g. " + EXAMPLES.map((e) => '"' + e + '"').join(", ")),
+  ]);
 }
 
 main();
