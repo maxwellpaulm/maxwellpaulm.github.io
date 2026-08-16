@@ -1,3 +1,4 @@
+mod ask_index;
 mod build;
 mod checks;
 mod components;

@@ -7,7 +7,7 @@ source = "/about/"
 
 [[intent]]
 match = ["contact", "email", "how do i contact you", "how can i reach you", "get in touch"]
-answer = "GitHub and LinkedIn are linked in the rail on every page — LinkedIn is the fastest way to reach me."
+answer = "GitHub and LinkedIn are both linked in the rail on every page — either one reaches me."
 source = "/"
 
 [[intent]]
