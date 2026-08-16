@@ -339,6 +339,24 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
   .item .year {{ text-align: left; }}
 }}
 
+/* Touch targets. The desktop rail is deliberately tight — 21px nav links,
+   25px buttons — which is fine for a cursor and too small for a thumb, so
+   these only apply where the primary pointer is coarse. 44px is the WCAG
+   2.5.8 minimum. */
+@media (pointer: coarse) {{
+  .rail nav a, .rail-links a {{
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }}
+  .theme-toggle, .demo-input {{
+    min-height: 44px;
+    padding: 10px 14px;
+  }}
+  .rail nav {{ gap: 0 calc(var(--space) * 2); }}
+  .rail-links {{ gap: 0 calc(var(--space) * 1.5); }}
+}}
+
 @media (prefers-reduced-motion: reduce) {{
   *, *::before, *::after {{
     animation-duration: 0.01ms !important;
@@ -682,6 +700,24 @@ mod tests {
             let at = css.find(rule).unwrap_or_else(|| panic!("stylesheet missing {rule}"));
             assert!(at > gate, "{rule} must sit inside the hover/pointer media gate: {css}");
         }
+    }
+
+    #[test]
+    fn touch_devices_get_reachable_tap_targets() {
+        // Measured on the live site at 375px: nav links were 21px tall,
+        // buttons 25px, inputs 29px — every interactive element under the
+        // 44px WCAG 2.5.8 target size. The rules are gated on a coarse
+        // pointer so the desktop layout, which is deliberately tight, is
+        // untouched.
+        let css = stylesheet();
+        let gate = css.find("@media (pointer: coarse)").expect("coarse-pointer gate present");
+        let block = &css[gate..];
+        let end = block.find("\n}\n").map(|i| i + 3).unwrap_or(block.len());
+        let block = &block[..end];
+        for target in [".rail nav a", ".rail-links a", ".theme-toggle", ".demo-input"] {
+            assert!(block.contains(target), "coarse-pointer block must size {target}: {block}");
+        }
+        assert!(block.contains("min-height: 44px;"), "tap targets must reach 44px: {block}");
     }
 
     #[test]
