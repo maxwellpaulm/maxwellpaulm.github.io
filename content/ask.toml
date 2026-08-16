@@ -26,3 +26,9 @@ q = "What happened in the NSA Codebreaker Challenge?"
 a = "In 2023 Paul was one of 24 finishers (of about 3,300) in the NSA Codebreaker Challenge."
 aliases = ["nsa", "codebreaker", "ctf", "security", "challenge"]
 source = "/about/"
+
+[[note]]
+q = "What did Paul build at Amazon?"
+a = "At Amazon, Paul worked on fraud detection: a real-time duplicate-invoice detection service handling bursts up to 500 TPS with pluggable rule-based and ML engines, and a compliance-ingestion pipeline processing roughly a billion book titles a year to extract required metadata and store compliance artifacts."
+aliases = ["amazon", "fraud detection", "duplicate invoice", "invoice detection", "compliance ingestion", "book titles"]
+source = "/projects/"

@@ -105,4 +105,60 @@ mod tests {
             note["boost"].as_array().unwrap().iter().map(|b| b.as_str().unwrap()).collect();
         assert!(boost.contains(&"degree"), "aliases must land in boost: {boost:?}");
     }
+
+    /// Builds the engine from the REAL corpus (real site.toml + ask.toml,
+    /// not the synthetic fixture in engine.rs's own tests) and checks that
+    /// the obvious questions land on the right passage. This is the only
+    /// place that would have caught the "Now" passage outranking the
+    /// Amazon work entries for "what did paul build at amazon?".
+    mod real_corpus {
+        use super::*;
+        use ask_terminal::engine::{Engine, Response};
+
+        fn real_engine() -> Engine {
+            let site = crate::content::fixture_site();
+            let ask = crate::content::fixture_ask();
+            let json = index_json(&site, &ask).unwrap();
+            Engine::new(&json).unwrap()
+        }
+
+        #[test]
+        fn amazon_question_lands_on_amazon_work_not_the_now_passage() {
+            match real_engine().ask("what did paul build at amazon?") {
+                Response::Answer { title, source, .. } => {
+                    assert_eq!(source, "/projects/", "expected an Amazon work/project passage, got title {title:?}");
+                    assert_ne!(title, "Now", "regression: the generic bio passage outranked the Amazon work");
+                }
+                other => panic!("expected an answer, got {other:?}"),
+            }
+        }
+
+        #[test]
+        fn aho_corasick_finds_the_transaction_tagging_engine() {
+            match real_engine().ask("aho corasick") {
+                Response::Answer { title, .. } => {
+                    assert_eq!(title, "Transaction Tagging Engine");
+                }
+                other => panic!("expected an answer, got {other:?}"),
+            }
+        }
+
+        #[test]
+        fn who_are_you_hits_the_intent_answer() {
+            match real_engine().ask("who are you?") {
+                Response::Answer { title, .. } => {
+                    assert_eq!(title, "", "intent answers carry no passage title");
+                }
+                other => panic!("expected an answer, got {other:?}"),
+            }
+        }
+
+        #[test]
+        fn nonsense_query_misses_with_suggestions() {
+            match real_engine().ask("quantum blockchain golf") {
+                Response::Miss { suggest } => assert!(!suggest.is_empty(), "expected suggest terms"),
+                other => panic!("expected a miss, got {other:?}"),
+            }
+        }
+    }
 }
