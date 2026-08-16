@@ -48,6 +48,10 @@ pub fn page(site: &Site, canonical_path: Option<&str>, title: &str, body: Markup
                         r#"try{var t=localStorage.getItem("theme");if(t==="dark")document.documentElement.dataset.theme="dark"}catch(e){}"#
                     ))
                 }
+                // Easter egg: Konami-code CRT mode. External and same-origin,
+                // so it rides on the CSP's `script-src 'self'` rather than the
+                // inline-hash allowlist.
+                script defer src="/crt.js" {}
             }
             body {
                 (body)
@@ -117,6 +121,20 @@ mod tests {
         assert!(out.contains(r#"<meta name="viewport""#), "missing viewport meta");
         assert!(out.contains(r#"<link rel="stylesheet" href="/style.css">"#));
         assert!(out.contains("<p>hello</p>"), "body content not rendered");
+    }
+
+    #[test]
+    fn every_page_ships_the_crt_easter_egg_script() {
+        // static/crt.js listens for the Konami code on every page; the
+        // easter egg only works site-wide if the shell loads it site-wide.
+        // External same-origin scripts are covered by the CSP's
+        // `script-src 'self'`, so this adds no inline-script hash.
+        let site = fixture_site();
+        let out = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
+        assert!(
+            out.contains(r#"<script defer src="/crt.js"></script>"#),
+            "missing crt.js easter-egg script tag: {out}"
+        );
     }
 
     #[test]

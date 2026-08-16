@@ -26,6 +26,19 @@ pub const DARK: Palette = Palette {
     accent: "#E0764A",
 };
 
+/// Green-phosphor tokens for the Konami-code CRT easter egg
+/// (`static/crt.js` toggles `data-crt` on `<html>`). A full palette rather
+/// than ad-hoc colours so the mode recolours everything through the same
+/// variables light/dark use — and passes through the same WCAG AA test.
+pub const CRT: Palette = Palette {
+    paper: "#050805",
+    surface: "#0B140C",
+    ink: "#33FF66",
+    muted: "#2EBF5A",
+    rule: "#175A2B",
+    accent: "#FFB84D",
+};
+
 #[cfg(test)]
 fn channel_luminance(byte: u8) -> f64 {
     let c = f64::from(byte) / 255.0;
@@ -92,6 +105,47 @@ pub fn stylesheet() -> String {
 :root[data-theme="dark"] {{
 {dark}
   color-scheme: dark;
+}}
+
+/* Easter egg: Konami-code CRT mode (static/crt.js toggles data-crt on
+   <html>; Escape exits). Equal specificity with the dark block above, so
+   this must stay after it — source order is what lets CRT win over an
+   explicitly-dark theme. */
+:root[data-crt] {{
+{crt}
+  color-scheme: dark;
+}}
+:root[data-crt] body {{
+  font-family: var(--font-mono);
+  text-shadow:
+    0 0 2px rgba(51, 255, 102, 0.55),
+    1px 0 0 rgba(255, 60, 60, 0.22),
+    -1px 0 0 rgba(60, 120, 255, 0.22);
+  animation: crt-enter 0.55s steps(2, end), crt-flicker 4s step-end 0.55s infinite;
+}}
+:root[data-crt] body::after {{
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
+}}
+@keyframes crt-enter {{
+  0% {{ transform: translateX(-6px) skewX(2deg); opacity: 0.4; }}
+  25% {{ transform: translateX(5px) skewX(-1.5deg); opacity: 0.9; }}
+  50% {{ transform: translateX(-3px); opacity: 0.6; }}
+  75% {{ transform: translateX(2px); opacity: 1; }}
+  100% {{ transform: none; opacity: 1; }}
+}}
+@keyframes crt-flicker {{
+  0%, 91% {{ opacity: 1; }}
+  93% {{ opacity: 0.82; }}
+  94% {{ opacity: 1; }}
+  97% {{ opacity: 0.93; }}
+  98%, 100% {{ opacity: 1; }}
 }}
 
 *, *::before, *::after {{ box-sizing: border-box; }}
@@ -282,6 +336,7 @@ h2 {{ font-size: 24px; letter-spacing: -0.02em; font-weight: 600; }}
 "#,
         light = tokens(LIGHT),
         dark = tokens(DARK),
+        crt = tokens(CRT),
     )
 }
 
@@ -298,7 +353,7 @@ mod tests {
 
     #[test]
     fn every_token_pair_meets_wcag_aa() {
-        for (name, p) in [("light", LIGHT), ("dark", DARK)] {
+        for (name, p) in [("light", LIGHT), ("dark", DARK), ("crt", CRT)] {
             for (bg_label, bg) in [("paper", p.paper), ("surface", p.surface)] {
                 for (label, fg) in [("ink", p.ink), ("muted", p.muted), ("accent", p.accent)] {
                     let ratio = contrast_ratio(fg, bg);
@@ -469,6 +524,40 @@ mod tests {
                 "static/demos/aho-loader.js no longer mentions {class}"
             );
         }
+    }
+
+    #[test]
+    fn crt_mode_styles_are_defined_here() {
+        // static/crt.js toggles `data-crt` on <html> (the Konami-code
+        // easter egg) with nothing tying it to this stylesheet. The mode
+        // is its own token override block — like dark mode — plus the
+        // scanline overlay and the flicker/entry animations. It must sit
+        // *after* the dark block in the emitted sheet: the selectors have
+        // equal specificity, so source order is what lets CRT win over an
+        // explicitly-dark theme.
+        let css = stylesheet();
+        assert!(css.contains(":root[data-crt] {"), "stylesheet missing CRT token block: {css}");
+        assert!(
+            css.contains(":root[data-crt] body::after {"),
+            "stylesheet missing the CRT scanline overlay: {css}"
+        );
+        assert!(css.contains("@keyframes crt-flicker"), "stylesheet missing CRT flicker: {css}");
+        assert!(css.contains("@keyframes crt-enter"), "stylesheet missing CRT entry glitch: {css}");
+        let dark = css.find(r#":root[data-theme="dark"]"#).expect("dark block present");
+        let crt = css.find(":root[data-crt] {").expect("CRT block present");
+        assert!(crt > dark, "CRT token block must come after the dark block to win on source order");
+    }
+
+    #[test]
+    fn crt_attribute_names_agree_with_the_script_that_toggles_them() {
+        // Same cross-file tie as the aho loader test above: the stylesheet
+        // styles `[data-crt]` and static/crt.js sets it; renaming either
+        // side alone should break the build.
+        let css = stylesheet();
+        const CRT_JS: &str = include_str!("../../../static/crt.js");
+        assert!(css.contains("data-crt"), "stylesheet no longer mentions data-crt: {css}");
+        assert!(CRT_JS.contains("data-crt"), "static/crt.js no longer toggles data-crt");
+        assert!(CRT_JS.contains("Escape"), "static/crt.js no longer exits CRT mode on Escape");
     }
 
     #[test]
