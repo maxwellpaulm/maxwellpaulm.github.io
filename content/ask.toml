@@ -29,6 +29,6 @@ source = "/about/"
 
 [[note]]
 q = "What did Paul build at Amazon?"
-a = "At Amazon, Paul worked on fraud detection: a real-time duplicate-invoice detection service handling bursts up to 500 TPS with pluggable rule-based and ML engines, and a compliance-ingestion pipeline processing roughly a billion book titles a year to extract required metadata and store compliance artifacts."
+a = "At Amazon, Paul worked on fraud detection — a real-time duplicate-invoice detection service handling bursts up to 500 TPS, with pluggable rule-based and ML engines — and separately on an EU compliance-ingestion pipeline processing roughly a billion book titles a year, extracting required metadata and storing compliance artifacts."
 aliases = ["amazon", "fraud detection", "duplicate invoice", "invoice detection", "compliance ingestion", "book titles"]
 source = "/projects/"

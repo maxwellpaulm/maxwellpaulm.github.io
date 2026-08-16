@@ -124,10 +124,22 @@ mod tests {
 
         #[test]
         fn amazon_question_lands_on_amazon_work_not_the_now_passage() {
+            // Derived from site.toml rather than hardcoded, so routine prose
+            // edits there don't make this brittle — but it still pins the
+            // answer to something actually Amazon-relevant, not just any
+            // /projects/ passage (Zero-Trust Agent Gateway and Archie BYOC
+            // are also /projects/ and would wrongly satisfy a looser check).
+            let site = crate::content::fixture_site();
+            let amazon_titles: Vec<&str> =
+                site.work.iter().filter(|w| w.org == "Amazon").map(|w| w.title.as_str()).collect();
             match real_engine().ask("what did paul build at amazon?") {
                 Response::Answer { title, source, .. } => {
                     assert_eq!(source, "/projects/", "expected an Amazon work/project passage, got title {title:?}");
                     assert_ne!(title, "Now", "regression: the generic bio passage outranked the Amazon work");
+                    assert!(
+                        amazon_titles.contains(&title.as_str()) || title.to_lowercase().contains("amazon"),
+                        "expected an Amazon-relevant title (one of {amazon_titles:?}, or containing \"amazon\"), got {title:?}"
+                    );
                 }
                 other => panic!("expected an answer, got {other:?}"),
             }
