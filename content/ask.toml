@@ -1,0 +1,50 @@
+suggest = ["amazon", "fraud detection", "aho-corasick", "p-1 ai", "georgia tech"]
+examples = ["what did paul build at amazon?", "aho-corasick", "who are you?"]
+
+[[intent]]
+match = ["who are you", "who is paul", "about", "about paul", "tell me about yourself"]
+answer = "I'm Paul Maxwell — a software engineer in Washington, DC, currently at P-1 AI building the platform behind Archie, an AI engineering agent. Before that: fraud detection at Amazon, credit underwriting at Ampla, portfolio analytics at BlackRock."
+source = "/about/"
+
+[[intent]]
+match = ["where is he based", "where does he live", "where is paul based", "location", "where are you based", "where are you located", "where is paul located"]
+answer = "I'm based in Washington, DC."
+source = "/about/"
+
+[[intent]]
+match = ["resume", "cv", "can i see your resume", "can i see your cv", "your resume", "your cv"]
+answer = "My resume is at /resume/, with a PDF download alongside it."
+source = "/resume/"
+
+[[intent]]
+match = ["demos", "your demos", "can i see your demos", "interactive demos", "see your demos"]
+answer = "There's a /demos/ page with two small interactive builds, including an Aho–Corasick string-matching visualization."
+source = "/demos/"
+
+[[intent]]
+match = ["contact", "email", "how do i contact you", "how can i reach you", "get in touch", "how can i contact him", "how do i contact paul", "how do i reach paul", "what's your email address", "what's your email", "email address"]
+answer = "GitHub and LinkedIn are both linked in the rail on every page — either one reaches me."
+source = "/"
+
+[[intent]]
+match = ["what do you do", "where do you work", "current job", "what is your job", "where does paul work", "where does he work", "what does he do", "what does he do now", "what is he working on"]
+answer = "Lead Software Engineer at P-1 AI (2025—), working on the platform behind Archie, an AI engineering agent — everything from how it deploys into customer clouds to the plugin and dataset infrastructure it runs on."
+source = "/about/"
+
+[[note]]
+q = "What's Paul's education?"
+a = "I have a master's in computer science from Georgia Tech, a BSE from Michigan, and a CFA charter."
+aliases = ["degree", "school", "university", "studied", "masters", "cfa", "michigan"]
+source = "/about/"
+
+[[note]]
+q = "What happened in the NSA Codebreaker Challenge?"
+a = "In 2023 I was one of 24 finishers (of about 3,300) in the NSA Codebreaker Challenge."
+aliases = ["nsa", "codebreaker", "ctf", "security", "challenge"]
+source = "/about/"
+
+[[note]]
+q = "What did Paul build at Amazon?"
+a = "At Amazon, I worked on fraud detection — a real-time duplicate-invoice detection service handling bursts up to 500 TPS, with pluggable rule-based and ML engines — and separately on an EU compliance-ingestion pipeline processing roughly a billion book titles a year, extracting required metadata and storing compliance artifacts."
+aliases = ["amazon", "fraud detection", "duplicate invoice", "invoice detection", "compliance ingestion", "book titles"]
+source = "/projects/"

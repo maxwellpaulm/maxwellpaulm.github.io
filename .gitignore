@@ -5,4 +5,5 @@ set_env.sh
 .superpowers/
 /static/demos/reaction-diffusion/
 /static/demos/aho-corasick/
+/static/ask/ask_terminal*
 /static/resume/

@@ -26,3 +26,4 @@ build_wasm_crate() {
 
 build_wasm_crate reaction-diffusion static/demos/reaction-diffusion reaction_diffusion
 build_wasm_crate aho-corasick-demo static/demos/aho-corasick aho_corasick_demo
+build_wasm_crate ask-terminal static/ask ask_terminal

@@ -30,8 +30,9 @@ Directive by directive:
   scripts must come from the same origin, or be one of the site's two
   known inline scripts (theme-restore in `<head>`, theme-toggle in the
   rail — see `security/csp-hashes.txt`). `'wasm-unsafe-eval'` is required
-  because both demo pages (`/demos/reaction-diffusion/`,
-  `/demos/aho-corasick/`) call `WebAssembly.instantiateStreaming`, which
+  because three pages (`/demos/reaction-diffusion/`,
+  `/demos/aho-corasick/`, and `/ask/`, whose BM25 searcher is also
+  compiled to wasm) call `WebAssembly.instantiateStreaming`, which
   browsers gate behind this token even though it's a normal, safe wasm
   load path (not `eval`-style string execution).
 - `style-src 'self'` — all CSS is the one same-origin stylesheet
@@ -47,7 +48,11 @@ Directive by directive:
   request that `connect-src` (not `script-src`) governs.
 - `base-uri 'none'` — nothing on the site needs a `<base>` tag; this
   closes off base-tag injection as an attack vector.
-- `form-action 'none'` — the site has no forms.
+- `form-action 'none'` — `/ask/` has one `<form>`, but its submit handler
+  always calls `preventDefault()` and never performs a real form
+  submission, so `'none'` stays correct: it's a backstop for the case
+  where JS is dead (disabled, blocked, or the wasm fails to load) and the
+  form would otherwise fall back to a native, page-navigating submit.
 - `frame-ancestors 'none'` — the site should never be framed by another
   origin (clickjacking defense; the modern replacement for
   `X-Frame-Options`).
@@ -139,7 +144,10 @@ manually exercise:
 - the dark-mode toggle button (rail),
 - `/demos/reaction-diffusion/` (canvas should render and respond to
   input, not stay blank),
-- `/demos/aho-corasick/` (same).
+- `/demos/aho-corasick/` (same),
+- `/ask/` — the page with the most CSP surface (module script + fetch +
+  wasm): type a question and confirm an answer card renders, not just
+  the noscript fallback.
 
 ## 4. Keeping this in sync
 

@@ -1,4 +1,5 @@
 pub mod about;
+pub mod ask;
 pub mod demo_aho_corasick;
 pub mod demo_reaction_diffusion;
 pub mod demos;

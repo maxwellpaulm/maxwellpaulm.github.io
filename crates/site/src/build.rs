@@ -158,6 +158,7 @@ fn resume_artifacts(root: &Path) -> Result<Vec<ResumePage>> {
 /// that CI uses to fetch the private release.
 pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     let site = Site::load(&root.join(CONTENT))?;
+    let ask = crate::content::AskContent::load(&root.join("content/ask.toml"))?;
     let mut written = Vec::new();
 
     let resume_pages = resume_artifacts(root)?;
@@ -175,12 +176,14 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
             Route::About => pages::about::render(&site),
             Route::Projects => pages::projects::render(&site),
             Route::Resume => pages::resume::render(&site, &resume_pages),
+            Route::Ask => pages::ask::render(&site),
             Route::Demos => pages::demos::render(&site),
         };
         write(&out.join(route.output_path()), &markup.into_string(), &mut written)?;
     }
 
     write(&out.join("style.css"), &theme::stylesheet(), &mut written)?;
+    write(&out.join("ask/index.json"), &crate::ask_index::index_json(&site, &ask)?, &mut written)?;
     write(&out.join("robots.txt"), &robots_txt(&site), &mut written)?;
     write(
         &out.join("sitemap.xml"),
@@ -620,6 +623,19 @@ mod tests {
             "error should name the offending file: {err}"
         );
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn build_emits_a_parsable_ask_corpus() {
+        let tmp = std::env::temp_dir().join("site-build-test-ask-index");
+        let _ = std::fs::remove_dir_all(&tmp);
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+        let json = std::fs::read_to_string(tmp.join("ask/index.json")).expect("index.json emitted");
+        let v: serde_json::Value = serde_json::from_str(&json).expect("index.json parses");
+        assert!(!v["passages"].as_array().unwrap().is_empty(), "corpus must not be empty");
+        assert!(!v["suggest"].as_array().unwrap().is_empty(), "suggest terms must ship");
+
+        std::fs::remove_dir_all(&tmp).ok();
     }
 
     #[test]

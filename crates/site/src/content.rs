@@ -34,6 +34,85 @@ pub struct Work {
     pub detail: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AskContent {
+    /// Real corpus vocabulary offered by the miss message ("try: …").
+    pub suggest: Vec<String>,
+    /// Example queries shown in the terminal's greeting. Sourced from
+    /// here (not hardcoded in JS) so editing an intent phrase can't
+    /// silently break the site's own suggested query — see the
+    /// `examples_resolve_to_real_answers` test below.
+    pub examples: Vec<String>,
+    #[serde(default)]
+    pub intent: Vec<Intent>,
+    #[serde(default)]
+    pub note: Vec<Note>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Intent {
+    #[serde(rename = "match")]
+    pub match_: Vec<String>,
+    pub answer: String,
+    pub source: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Note {
+    pub q: String,
+    pub a: String,
+    #[serde(default)]
+    pub aliases: Vec<String>,
+    pub source: String,
+}
+
+impl AskContent {
+    pub fn load(path: &Path) -> Result<Self> {
+        let raw = std::fs::read_to_string(path)
+            .with_context(|| format!("reading {}", path.display()))?;
+        Self::parse(&raw, path)
+    }
+
+    pub fn parse(raw: &str, path: &Path) -> Result<Self> {
+        let ask: AskContent =
+            toml::from_str(raw).with_context(|| format!("parsing {}", path.display()))?;
+        ask.validate(path)?;
+        Ok(ask)
+    }
+
+    /// Empty match lists or suggest/example terms would ship an intent
+    /// that can never fire, a miss message with nothing to suggest, or a
+    /// greeting with nothing to show — content mistakes that should fail
+    /// the build loudly. `source` is checked rooted (starts with `/`) so
+    /// a typo'd dead link or, worse, a `javascript:` value can never
+    /// reach `link.href` in the rendered terminal.
+    fn validate(&self, path: &Path) -> Result<()> {
+        if self.suggest.is_empty() {
+            bail!("{}: `suggest` must not be empty", path.display());
+        }
+        if self.examples.is_empty() {
+            bail!("{}: `examples` must not be empty", path.display());
+        }
+        for intent in &self.intent {
+            if intent.match_.is_empty() {
+                bail!("{}: every [[intent]] needs a non-empty `match` list", path.display());
+            }
+            if !intent.source.starts_with('/') {
+                bail!("{}: intent `source` must be a rooted path, got {:?}", path.display(), intent.source);
+            }
+        }
+        for note in &self.note {
+            if !note.source.starts_with('/') {
+                bail!("{}: note `source` must be a rooted path, got {:?}", path.display(), note.source);
+            }
+        }
+        Ok(())
+    }
+}
+
 impl Site {
     pub fn load(path: &Path) -> Result<Self> {
         let raw = std::fs::read_to_string(path)
@@ -61,6 +140,11 @@ impl Site {
 #[cfg(test)]
 pub fn fixture_site() -> Site {
     Site::load(std::path::Path::new("../../content/site.toml")).expect("content/site.toml loads")
+}
+
+#[cfg(test)]
+pub fn fixture_ask() -> AskContent {
+    AskContent::load(std::path::Path::new("../../content/ask.toml")).expect("content/ask.toml loads")
 }
 
 #[cfg(test)]
@@ -157,5 +241,68 @@ summary = "S"
         assert!(err.to_string().contains("about"), "got: {err}");
 
         std::fs::remove_file(&tmp).ok();
+    }
+
+    #[test]
+    fn ask_content_loads_and_exposes_intents_and_notes() {
+        let ask = AskContent::load(Path::new("../../content/ask.toml")).unwrap();
+        assert!(!ask.suggest.is_empty(), "suggest terms drive the miss message");
+        assert!(!ask.examples.is_empty(), "examples drive the terminal's greeting");
+        assert!(!ask.intent.is_empty(), "starter content must include intents");
+        assert!(!ask.note.is_empty(), "starter content must include notes");
+        let who = ask.intent.iter().find(|i| i.match_.iter().any(|m| m == "who are you"));
+        assert!(who.is_some(), "the canonical who-are-you intent is missing");
+    }
+
+    #[test]
+    fn ask_content_rejects_an_empty_intent_match_list() {
+        let toml = r#"
+suggest = ["amazon"]
+examples = ["amazon"]
+[[intent]]
+match = []
+answer = "x"
+source = "/"
+"#;
+        let err = AskContent::parse(toml, Path::new("test.toml")).unwrap_err().to_string();
+        assert!(err.contains("match"), "error should name the empty field: {err}");
+    }
+
+    #[test]
+    fn ask_content_rejects_empty_examples() {
+        let toml = r#"
+suggest = ["amazon"]
+examples = []
+"#;
+        let err = AskContent::parse(toml, Path::new("test.toml")).unwrap_err().to_string();
+        assert!(err.contains("examples"), "error should name the empty field: {err}");
+    }
+
+    #[test]
+    fn ask_content_rejects_an_unrooted_intent_source() {
+        let toml = r#"
+suggest = ["amazon"]
+examples = ["amazon"]
+[[intent]]
+match = ["hi"]
+answer = "x"
+source = "javascript:alert(1)"
+"#;
+        let err = AskContent::parse(toml, Path::new("test.toml")).unwrap_err().to_string();
+        assert!(err.contains("source"), "error should name the bad field: {err}");
+    }
+
+    #[test]
+    fn ask_content_rejects_an_unrooted_note_source() {
+        let toml = r#"
+suggest = ["amazon"]
+examples = ["amazon"]
+[[note]]
+q = "q"
+a = "a"
+source = "not-rooted"
+"#;
+        let err = AskContent::parse(toml, Path::new("test.toml")).unwrap_err().to_string();
+        assert!(err.contains("source"), "error should name the bad field: {err}");
     }
 }
