@@ -20,6 +20,7 @@
 
   var running = false;
   var canvas = null;
+  var quit = null;
   var ctx = null;
   var splits = []; // {node, inserted} for perfect DOM restore
   var words = []; // .ship-word spans still alive
@@ -90,6 +91,14 @@
     canvas = document.createElement("canvas");
     canvas.id = "ship-canvas";
     document.body.appendChild(canvas);
+    // The canvas is pointer-events: none, so the exit is its own element.
+    quit = document.createElement("button");
+    quit.type = "button";
+    quit.className = "ship-quit";
+    quit.textContent = "Esc ×";
+    quit.setAttribute("aria-label", "Exit the game and restore the page");
+    quit.addEventListener("click", end);
+    document.body.appendChild(quit);
     ctx = canvas.getContext("2d");
     resize();
     ship = {
@@ -120,7 +129,8 @@
     removeEventListener("keyup", onKeyUp, true);
     removeEventListener("resize", resize);
     if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
-    canvas = ctx = null;
+    if (quit && quit.parentNode) quit.parentNode.removeChild(quit);
+    canvas = ctx = quit = null;
     restoreWords();
   }
 
@@ -360,6 +370,12 @@
     ctx.textAlign = "left";
   }
 
+  // Flying needs arrows and space, and quitting needs Escape, so a
+  // touch-primary device can only ever get trapped in this game. Tapping the
+  // monogram there does what it did before the easter egg existed: nothing.
+  var touchPrimary =
+    typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+
   var mark = document.getElementById("pm-mark");
-  if (mark) mark.addEventListener("click", start);
+  if (mark && !touchPrimary) mark.addEventListener("click", start);
 })();

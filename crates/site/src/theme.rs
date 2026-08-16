@@ -153,20 +153,43 @@ pub fn stylesheet() -> String {
    hitbox — stays put; the canvas overlays everything but never eats input,
    the game listens on the document instead. */
 .ship-hit {{ visibility: hidden; }}
-#pm-mark {{
-  cursor: crosshair;
-  width: fit-content;
-  transition: transform var(--motion) ease;
+#pm-mark {{ width: fit-content; }}
+/* The launch-pose gag is pointer-only: on a touchscreen `:hover` latches
+   after a tap, leaving the monogram stuck mid-launch, and a crosshair
+   cursor means nothing without a cursor. */
+@media (hover: hover) and (pointer: fine) {{
+  #pm-mark {{
+    cursor: crosshair;
+    transition: transform var(--motion) ease;
+  }}
+  #pm-mark:hover {{ transform: rotate(-15deg) translateY(-2px); }}
+  #pm-mark:hover::after {{
+    content: "";
+    display: inline-block;
+    margin-left: 4px;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-right: 6px solid var(--accent);
+  }}
 }}
-#pm-mark:hover {{ transform: rotate(-15deg) translateY(-2px); }}
-#pm-mark:hover::after {{
-  content: "";
-  display: inline-block;
-  margin-left: 4px;
-  border-top: 3px solid transparent;
-  border-bottom: 3px solid transparent;
-  border-right: 6px solid var(--accent);
+/* The game's own exit, so leaving never depends on knowing about Escape. */
+.ship-quit {{
+  position: fixed;
+  top: calc(var(--space) * 1.5);
+  right: calc(var(--space) * 1.5);
+  z-index: 10001;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 8px 12px;
+  cursor: pointer;
 }}
+.ship-quit:hover {{ border-color: var(--accent); }}
 #ship-canvas {{
   position: fixed;
   inset: 0;
@@ -639,14 +662,40 @@ mod tests {
         // into a crosshair and tips the mark into a launch pose with a tiny
         // accent exhaust flame (rail.rs adds the deadpan tooltip).
         let css = stylesheet();
-        assert!(
-            css.contains("#pm-mark {\n  cursor: crosshair;"),
-            "stylesheet missing the crosshair cursor on #pm-mark: {css}"
-        );
+        assert!(css.contains("cursor: crosshair;"), "stylesheet missing the crosshair cursor: {css}");
         assert!(css.contains("#pm-mark:hover {"), "stylesheet missing the #pm-mark launch pose: {css}");
         assert!(
             css.contains("#pm-mark:hover::after {"),
             "stylesheet missing the #pm-mark exhaust flame: {css}"
+        );
+    }
+
+    #[test]
+    fn pm_mark_hover_gag_is_gated_to_devices_that_can_hover() {
+        // On a touchscreen `:hover` latches after a tap, so without this gate
+        // the monogram stays tilted mid-launch with its exhaust flame lit
+        // until the visitor taps elsewhere. The crosshair cursor is equally
+        // meaningless without a pointer.
+        let css = stylesheet();
+        let gate = css.find("@media (hover: hover) and (pointer: fine)").expect("hover gate present");
+        for rule in ["#pm-mark:hover {", "#pm-mark:hover::after {", "cursor: crosshair;"] {
+            let at = css.find(rule).unwrap_or_else(|| panic!("stylesheet missing {rule}"));
+            assert!(at > gate, "{rule} must sit inside the hover/pointer media gate: {css}");
+        }
+    }
+
+    #[test]
+    fn ship_game_has_a_pointer_operable_exit() {
+        // Escape is the documented way out, but a visitor who launched the
+        // game by clicking should never need a keyboard to leave it — the
+        // close control is the only thing standing between them and a reload.
+        let css = stylesheet();
+        const SHIP_JS: &str = include_str!("../../../static/ship.js");
+        assert!(css.contains(".ship-quit {"), "stylesheet missing the game's exit control: {css}");
+        assert!(SHIP_JS.contains("ship-quit"), "static/ship.js no longer builds the exit control");
+        assert!(
+            SHIP_JS.contains("pointer: coarse"),
+            "static/ship.js must not launch a keyboard-only game on touch devices"
         );
     }
 
