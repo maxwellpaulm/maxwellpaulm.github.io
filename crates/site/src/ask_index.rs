@@ -23,17 +23,19 @@ struct Index<'a> {
     passages: Vec<Passage<'a>>,
     intents: Vec<IntentOut<'a>>,
     suggest: &'a [String],
+    examples: &'a [String],
 }
 
 /// The `/ask/` corpus: one passage per work entry, per about paragraph,
-/// one "now" passage from the lede/bio/role lines, plus every authored
-/// note. Notes carry their question and aliases as `boost` terms the
-/// searcher indexes at extra weight.
+/// one "now" passage from the lede/bio/role lines (plus location — the
+/// rail displays it, so the corpus must contain it too), plus every
+/// authored note. Notes carry their question and aliases as `boost`
+/// terms the searcher indexes at extra weight.
 pub fn index_json(site: &Site, ask: &AskContent) -> Result<String> {
     let mut passages = Vec::new();
     passages.push(Passage {
         title: "Now",
-        text: format!("{} {} {}", site.role, site.lede, site.bio),
+        text: format!("{} {} {} {}", site.location, site.role, site.lede, site.bio),
         source: "/",
         boost: Vec::new(),
     });
@@ -58,7 +60,7 @@ pub fn index_json(site: &Site, ask: &AskContent) -> Result<String> {
         .iter()
         .map(|i| IntentOut { match_: &i.match_, answer: &i.answer, source: &i.source })
         .collect();
-    Ok(serde_json::to_string(&Index { passages, intents, suggest: &ask.suggest })?)
+    Ok(serde_json::to_string(&Index { passages, intents, suggest: &ask.suggest, examples: &ask.examples })?)
 }
 
 #[cfg(test)]
@@ -170,6 +172,90 @@ mod tests {
             match real_engine().ask("quantum blockchain golf") {
                 Response::Miss { suggest } => assert!(!suggest.is_empty(), "expected suggest terms"),
                 other => panic!("expected a miss, got {other:?}"),
+            }
+        }
+
+        /// Regression: third-person "where does paul work" used to fall
+        /// through to BM25, where {paul, work} was dominated by the Amazon
+        /// note's tripled-boost title — his *previous* employer, not his
+        /// current one.
+        #[test]
+        fn third_person_job_questions_hit_the_current_job_intent() {
+            for q in ["where does paul work", "where does he work", "what does he do now"] {
+                match real_engine().ask(q) {
+                    Response::Answer { text, .. } => {
+                        assert!(text.contains("P-1 AI"), "query {q:?} did not answer with the current job: {text:?}")
+                    }
+                    other => panic!("expected an answer for {q:?}, got {other:?}"),
+                }
+            }
+        }
+
+        /// Regression: "where is he based" used to stem "based" to "bas"
+        /// and collide with "rule-based", landing on the fraud-detection
+        /// passage instead of the owner's actual location.
+        #[test]
+        fn location_questions_answer_with_the_owners_location() {
+            let site = crate::content::fixture_site();
+            for q in ["where is he based", "where does he live"] {
+                match real_engine().ask(q) {
+                    Response::Answer { text, .. } => {
+                        assert!(
+                            text.contains(&site.location),
+                            "query {q:?} did not mention {:?}: {text:?}",
+                            site.location
+                        )
+                    }
+                    other => panic!("expected an answer for {q:?}, got {other:?}"),
+                }
+            }
+        }
+
+        /// Regression: "resume", "cv", and "demos" used to MISS on a site
+        /// with real /resume/ and /demos/ routes.
+        #[test]
+        fn resume_and_demos_questions_point_at_their_routes() {
+            match real_engine().ask("resume") {
+                Response::Answer { source, .. } => assert_eq!(source, "/resume/"),
+                other => panic!("expected an answer, got {other:?}"),
+            }
+            match real_engine().ask("cv") {
+                Response::Answer { source, .. } => assert_eq!(source, "/resume/"),
+                other => panic!("expected an answer, got {other:?}"),
+            }
+            match real_engine().ask("demos") {
+                Response::Answer { source, .. } => assert_eq!(source, "/demos/"),
+                other => panic!("expected an answer, got {other:?}"),
+            }
+        }
+
+        /// Regression: apostrophe questions used to yield a bare "s" token
+        /// that hijacked the education note via its boosted title's six
+        /// "s" occurrences.
+        #[test]
+        fn apostrophe_questions_no_longer_hijack_the_education_note() {
+            match real_engine().ask("what's your email address?") {
+                Response::Answer { title, .. } => {
+                    assert_ne!(title, "What's Paul's education?", "regression: apostrophe 's' token hijack")
+                }
+                Response::Miss { .. } => {} // honest miss is fine; the wrong answer is what regressed before
+            }
+        }
+
+        /// The terminal's greeting shows `ask.examples` as suggested
+        /// queries. If an intent phrase is edited later and an example
+        /// stops resolving, that's a silent regression a visitor would
+        /// hit immediately — this closes the loop that `suggest` (whose
+        /// terms are never run through the engine) only half-closes.
+        #[test]
+        fn every_example_resolves_to_a_real_answer() {
+            let ask = crate::content::fixture_ask();
+            let engine = real_engine();
+            for example in &ask.examples {
+                match engine.ask(example) {
+                    Response::Answer { .. } => {}
+                    Response::Miss { .. } => panic!("example {example:?} misses instead of answering"),
+                }
             }
         }
     }
