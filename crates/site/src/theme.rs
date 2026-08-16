@@ -148,6 +148,20 @@ pub fn stylesheet() -> String {
   98%, 100% {{ opacity: 1; }}
 }}
 
+/* Easter egg: space shooter (static/ship.js, launched by clicking #pm-mark).
+   Shot words hide via visibility so the layout — and every other word's
+   hitbox — stays put; the canvas overlays everything but never eats input,
+   the game listens on the document instead. */
+.ship-hit {{ visibility: hidden; }}
+#ship-canvas {{
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  pointer-events: none;
+}}
+
 *, *::before, *::after {{ box-sizing: border-box; }}
 
 body {{
@@ -558,6 +572,27 @@ mod tests {
         assert!(css.contains("data-crt"), "stylesheet no longer mentions data-crt: {css}");
         assert!(CRT_JS.contains("data-crt"), "static/crt.js no longer toggles data-crt");
         assert!(CRT_JS.contains("Escape"), "static/crt.js no longer exits CRT mode on Escape");
+    }
+
+    #[test]
+    fn ship_game_class_names_agree_with_the_script_that_writes_them() {
+        // static/ship.js wraps page text in `.ship-word` spans, hides shot
+        // words with `.ship-hit`, overlays `#ship-canvas`, and launches from
+        // `#pm-mark` (see rail.rs). The stylesheet must define what the
+        // script toggles, and renaming either side alone should break the
+        // build. `.ship-hit` must hide via visibility, not display: pulling
+        // a word out of flow would reflow every remaining target mid-game.
+        let css = stylesheet();
+        const SHIP_JS: &str = include_str!("../../../static/ship.js");
+        assert!(
+            css.contains(".ship-hit { visibility: hidden; }"),
+            "stylesheet missing the layout-stable .ship-hit rule: {css}"
+        );
+        assert!(css.contains("#ship-canvas {"), "stylesheet missing #ship-canvas overlay: {css}");
+        for name in ["ship-word", "ship-hit", "ship-canvas", "pm-mark"] {
+            assert!(SHIP_JS.contains(name), "static/ship.js no longer mentions {name}");
+        }
+        assert!(SHIP_JS.contains("Escape"), "static/ship.js no longer quits on Escape");
     }
 
     #[test]

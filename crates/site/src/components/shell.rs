@@ -52,6 +52,9 @@ pub fn page(site: &Site, canonical_path: Option<&str>, title: &str, body: Markup
                 // so it rides on the CSP's `script-src 'self'` rather than the
                 // inline-hash allowlist.
                 script defer src="/crt.js" {}
+                // Easter egg: clicking the rail's PM mark launches a tiny
+                // space shooter over the page. Same CSP story as crt.js.
+                script defer src="/ship.js" {}
             }
             body {
                 (body)
@@ -134,6 +137,18 @@ mod tests {
         assert!(
             out.contains(r#"<script defer src="/crt.js"></script>"#),
             "missing crt.js easter-egg script tag: {out}"
+        );
+    }
+
+    #[test]
+    fn every_page_ships_the_ship_easter_egg_script() {
+        // static/ship.js arms the click trigger on the rail's PM mark; like
+        // crt.js it is external and same-origin, covered by `script-src 'self'`.
+        let site = fixture_site();
+        let out = page(&site, Some(Route::Index.path()), "Index", html! { p { "x" } }).into_string();
+        assert!(
+            out.contains(r#"<script defer src="/ship.js"></script>"#),
+            "missing ship.js easter-egg script tag: {out}"
         );
     }
 

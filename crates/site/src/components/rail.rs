@@ -8,7 +8,9 @@ use maud::{html, Markup};
 pub fn rail(site: &Site, current: Option<Route>) -> Markup {
     html! {
         div .rail {
-            div .mono { "PM" }
+            // The id is static/ship.js's click target (the space-shooter
+            // easter egg); rail and theme tests pin the name on both sides.
+            div .mono #pm-mark { "PM" }
             nav aria-label="Primary" {
                 @for route in Route::ALL {
                     @if Some(route) == current {
@@ -82,6 +84,18 @@ mod tests {
         assert!(
             !out.contains("aria-current=\"page\""),
             "no nav entry should be marked current: {out}"
+        );
+    }
+
+    #[test]
+    fn pm_mark_carries_the_ship_easter_egg_trigger_id() {
+        // static/ship.js launches the space-shooter egg from a click on the
+        // PM monogram; the id is the contract between the markup and that
+        // script.
+        let out = rail(&site(), Some(Route::Index)).into_string();
+        assert!(
+            out.contains(r#"<div class="mono" id="pm-mark">PM</div>"#),
+            "PM mark must carry id=\"pm-mark\" for ship.js: {out}"
         );
     }
 
