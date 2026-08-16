@@ -9,12 +9,23 @@ pub enum Route {
 }
 
 impl Route {
-    pub const ALL: [Route; 6] = [
+    /// The routes the site actually publishes. `Route::Ask` is deliberately
+    /// absent: the ask terminal is parked, not deleted. Its page, styles,
+    /// crate, corpus emitter, and every test stay compiled and green — the
+    /// site just doesn't publish it.
+    ///
+    /// To unpark, reverse four commented-out lines: this one; the
+    /// `ask/index.json` write in `build.rs`; the `build_wasm_crate` call in
+    /// `scripts/build-wasm.sh`; and the two `test -f` assertions in
+    /// `.github/workflows/deploy.yml`. Then delete
+    /// `build::tests::parked_ask_terminal_publishes_nothing`, which exists
+    /// to make a half-unpark fail loudly.
+    pub const ALL: [Route; 5] = [
         Route::Index,
         Route::About,
         Route::Projects,
         Route::Resume,
-        Route::Ask,
+        // Route::Ask,
         Route::Demos,
     ];
 
@@ -58,7 +69,7 @@ mod tests {
 
     #[test]
     fn every_route_has_a_rooted_path_and_html_output() {
-        assert_eq!(Route::ALL.len(), 6);
+        assert_eq!(Route::ALL.len(), 5);
         for r in Route::ALL {
             assert!(r.path().starts_with('/'), "{:?} path must be rooted", r);
             assert!(r.output_path().ends_with(".html"), "{:?} bad output", r);

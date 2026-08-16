@@ -61,8 +61,9 @@ jobs:
         test -f dist/demos/aho-corasick/aho_corasick_demo_bg.wasm
         test -f dist/demos/aho-corasick/aho_corasick_demo.js
         grep -q 'src="/demos/aho-loader.js"' dist/demos/aho-corasick/index.html
-        test -f dist/ask/ask_terminal_bg.wasm
-        test -f dist/ask/ask_terminal.js
+        # Parked with the ask terminal (see Route::ALL).
+        # test -f dist/ask/ask_terminal_bg.wasm
+        # test -f dist/ask/ask_terminal.js
 
     - name: Verify resume shipped
       run: |

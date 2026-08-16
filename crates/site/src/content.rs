@@ -36,6 +36,10 @@ pub struct Work {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
+// Parked with the ask terminal (see `Route::ALL`). Still loaded and
+// validated on every build so the content can't rot, but nothing reads
+// these fields until `/ask/` is published again.
+#[allow(dead_code)]
 pub struct AskContent {
     /// Real corpus vocabulary offered by the miss message ("try: …").
     pub suggest: Vec<String>,

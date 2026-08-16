@@ -158,7 +158,9 @@ fn resume_artifacts(root: &Path) -> Result<Vec<ResumePage>> {
 /// that CI uses to fetch the private release.
 pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     let site = Site::load(&root.join(CONTENT))?;
-    let ask = crate::content::AskContent::load(&root.join("content/ask.toml"))?;
+    // Still loaded while the ask terminal is parked, so a broken
+    // content/ask.toml fails the build rather than rotting unnoticed.
+    let _ask = crate::content::AskContent::load(&root.join("content/ask.toml"))?;
     let mut written = Vec::new();
 
     let resume_pages = resume_artifacts(root)?;
@@ -183,7 +185,8 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     }
 
     write(&out.join("style.css"), &theme::stylesheet(), &mut written)?;
-    write(&out.join("ask/index.json"), &crate::ask_index::index_json(&site, &ask)?, &mut written)?;
+    // Corpus emission is parked with the route — no page fetches it.
+    // write(&out.join("ask/index.json"), &crate::ask_index::index_json(&site, &_ask)?, &mut written)?;
     write(&out.join("robots.txt"), &robots_txt(&site), &mut written)?;
     write(
         &out.join("sitemap.xml"),
@@ -626,14 +629,24 @@ mod tests {
     }
 
     #[test]
-    fn build_emits_a_parsable_ask_corpus() {
-        let tmp = std::env::temp_dir().join("site-build-test-ask-index");
+    fn parked_ask_terminal_publishes_nothing() {
+        // The ask terminal is parked, not deleted (see `Route::ALL`). Its
+        // crate, page, styles, and corpus tests all stay green — but a build
+        // must publish no trace of it: no page, no corpus, and no mention in
+        // the sitemap or the nav. Unparking means deleting this test, which
+        // is the point: half-unparking should fail loudly.
+        let tmp = std::env::temp_dir().join("site-build-test-ask-parked");
         let _ = std::fs::remove_dir_all(&tmp);
         build(Path::new("../.."), &tmp, false).expect("build succeeds");
-        let json = std::fs::read_to_string(tmp.join("ask/index.json")).expect("index.json emitted");
-        let v: serde_json::Value = serde_json::from_str(&json).expect("index.json parses");
-        assert!(!v["passages"].as_array().unwrap().is_empty(), "corpus must not be empty");
-        assert!(!v["suggest"].as_array().unwrap().is_empty(), "suggest terms must ship");
+
+        assert!(!tmp.join("ask/index.html").exists(), "parked route must not publish a page");
+        assert!(!tmp.join("ask/index.json").exists(), "parked route must not publish its corpus");
+
+        let sitemap = std::fs::read_to_string(tmp.join("sitemap.xml")).expect("sitemap written");
+        assert!(!sitemap.contains("/ask/"), "parked route must not appear in the sitemap");
+
+        let index = std::fs::read_to_string(tmp.join("index.html")).expect("index written");
+        assert!(!index.contains(r#"href="/ask/""#), "parked route must not appear in the nav");
 
         std::fs::remove_dir_all(&tmp).ok();
     }

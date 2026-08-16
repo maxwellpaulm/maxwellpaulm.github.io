@@ -1,3 +1,7 @@
+// Parked with the ask terminal (see `Route::ALL`): the corpus emitter is
+// still compiled and still exercised by its tests, it just has no
+// build-time caller while `/ask/` is unpublished.
+#[allow(dead_code)]
 mod ask_index;
 mod build;
 mod checks;
