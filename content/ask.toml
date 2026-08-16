@@ -1,0 +1,28 @@
+suggest = ["amazon", "fraud detection", "aho-corasick", "p-1 ai", "georgia tech"]
+
+[[intent]]
+match = ["who are you", "who is paul", "about", "about paul", "tell me about yourself"]
+answer = "I'm Paul Maxwell — a software engineer in Washington, DC, currently at P-1 AI building the platform behind Archie, an AI engineering agent. Before that: fraud detection at Amazon, credit underwriting at Ampla, portfolio analytics at BlackRock."
+source = "/about/"
+
+[[intent]]
+match = ["contact", "email", "how do i contact you", "how can i reach you", "get in touch"]
+answer = "GitHub and LinkedIn are linked in the rail on every page — LinkedIn is the fastest way to reach me."
+source = "/"
+
+[[intent]]
+match = ["what do you do", "where do you work", "current job", "what is your job"]
+answer = "Lead Software Engineer at P-1 AI (2025—), working on the platform behind Archie, an AI engineering agent — everything from how it deploys into customer clouds to the plugin and dataset infrastructure it runs on."
+source = "/about/"
+
+[[note]]
+q = "What's Paul's education?"
+a = "A master's in computer science from Georgia Tech, a BSE from Michigan, and a CFA charter."
+aliases = ["degree", "school", "university", "studied", "masters", "cfa", "michigan"]
+source = "/about/"
+
+[[note]]
+q = "What happened in the NSA Codebreaker Challenge?"
+a = "In 2023 Paul was one of 24 finishers (of about 3,300) in the NSA Codebreaker Challenge."
+aliases = ["nsa", "codebreaker", "ctf", "security", "challenge"]
+source = "/about/"
