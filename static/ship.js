@@ -7,10 +7,10 @@
 (function () {
   "use strict";
 
-  var TURN = 0.075; // radians per frame at 60fps
-  var THRUST = 0.16; // px/frame^2
+  var TURN = 0.05; // radians per frame at 60fps
+  var THRUST = 0.1; // px/frame^2
   var FRICTION = 0.99;
-  var MAX_SPEED = 7;
+  var MAX_SPEED = 5.5;
   var BULLET_SPEED = 10;
   var BULLET_LIFE = 70; // frames
   var COOLDOWN = 140; // ms between shots
@@ -344,13 +344,11 @@
       ctx.restore();
     }
 
-    // HUD, top centre: running word count and the way out.
+    // HUD, top centre: running word count, the way out, and the controls.
     ctx.fillStyle = c.muted;
     ctx.textAlign = "center";
     ctx.fillText(score + " WORDS · ESC RESTORES", innerWidth / 2, 18);
-    if (now - startedAt < 4000 && !dead) {
-      ctx.fillText("← → ROTATE · ↑ THRUST · SPACE FIRE", innerWidth / 2, 34);
-    }
+    ctx.fillText("← → ROTATE · ↑ THRUST · SPACE FIRE", innerWidth / 2, 34);
 
     if (dead) {
       ctx.fillStyle = c.ink;
