@@ -153,6 +153,20 @@ pub fn stylesheet() -> String {
    hitbox — stays put; the canvas overlays everything but never eats input,
    the game listens on the document instead. */
 .ship-hit {{ visibility: hidden; }}
+#pm-mark {{
+  cursor: crosshair;
+  width: fit-content;
+  transition: transform var(--motion) ease;
+}}
+#pm-mark:hover {{ transform: rotate(-15deg) translateY(-2px); }}
+#pm-mark:hover::after {{
+  content: "";
+  display: inline-block;
+  margin-left: 4px;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-right: 6px solid var(--accent);
+}}
 #ship-canvas {{
   position: fixed;
   inset: 0;
@@ -593,6 +607,23 @@ mod tests {
             assert!(SHIP_JS.contains(name), "static/ship.js no longer mentions {name}");
         }
         assert!(SHIP_JS.contains("Escape"), "static/ship.js no longer quits on Escape");
+    }
+
+    #[test]
+    fn pm_mark_hints_at_the_hidden_game_on_hover() {
+        // The discoverability gag: hovering the PM monogram turns the cursor
+        // into a crosshair and tips the mark into a launch pose with a tiny
+        // accent exhaust flame (rail.rs adds the deadpan tooltip).
+        let css = stylesheet();
+        assert!(
+            css.contains("#pm-mark {\n  cursor: crosshair;"),
+            "stylesheet missing the crosshair cursor on #pm-mark: {css}"
+        );
+        assert!(css.contains("#pm-mark:hover {"), "stylesheet missing the #pm-mark launch pose: {css}");
+        assert!(
+            css.contains("#pm-mark:hover::after {"),
+            "stylesheet missing the #pm-mark exhaust flame: {css}"
+        );
     }
 
     #[test]

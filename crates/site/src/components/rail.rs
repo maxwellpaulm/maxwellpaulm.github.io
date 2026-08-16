@@ -10,7 +10,7 @@ pub fn rail(site: &Site, current: Option<Route>) -> Markup {
         div .rail {
             // The id is static/ship.js's click target (the space-shooter
             // easter egg); rail and theme tests pin the name on both sides.
-            div .mono #pm-mark { "PM" }
+            div .mono #pm-mark title="definitely not a spaceship" { "PM" }
             nav aria-label="Primary" {
                 @for route in Route::ALL {
                     @if Some(route) == current {
@@ -94,8 +94,8 @@ mod tests {
         // script.
         let out = rail(&site(), Some(Route::Index)).into_string();
         assert!(
-            out.contains(r#"<div class="mono" id="pm-mark">PM</div>"#),
-            "PM mark must carry id=\"pm-mark\" for ship.js: {out}"
+            out.contains(r#"<div class="mono" id="pm-mark" title="definitely not a spaceship">PM</div>"#),
+            "PM mark must carry id=\"pm-mark\" for ship.js and the deadpan hover tooltip: {out}"
         );
     }
 
