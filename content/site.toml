@@ -16,6 +16,20 @@ about = [
 ]
 
 [[work]]
+title = "Channels"
+org = "P-1 AI"
+year = "2026"
+summary = "A platform for an AI agent to be present in the tools engineers already use — Slack, Teams, Linear, Planner, and email — rather than only its own UI."
+detail = "Every surface is an adapter behind one contract, so adding one means writing an adapter, not changing the core. A message is persisted before it is acknowledged, the core drives an agent session, and the answer is rendered back in the surface's own idiom: Block Kit, Adaptive Cards, Linear activities, email threads. Users answer approvals and questions in place, and every action is attributed to a real user with their own permissions."
+
+[[work]]
+title = "Capabilities"
+org = "P-1 AI"
+year = "2026"
+summary = "The supply chain that lets an AI engineering agent learn a new domain: an authoring SDK, a catalog, an image factory, and a credential gateway."
+detail = "A capability bundles a Python library, the skills that tell the model how to use it, and its tests. An SDK and CLI define the authoring contract and scaffold, validate, and publish. The catalog is immutable records over content-addressed blobs in a bucket, run as triggerable jobs with no resident server — the bucket layout is the whole API. An image factory resolves an agent's capability set to exact digests and builds one immutable image, so the sandbox installs nothing at runtime. The zero-trust gateway below brokers every credential that code touches."
+
+[[work]]
 title = "Archie BYOC Platform"
 org = "P-1 AI"
 year = "2025"
