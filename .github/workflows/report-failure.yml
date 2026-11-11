@@ -1,0 +1,28 @@
+name: Report Failure
+
+# Opens (or comments on) one tracking issue per workflow when a scheduled run
+# fails. Nobody watches scheduled runs, so without this they fail silently.
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  open-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write # to open or comment on the tracking issue
+    steps:
+      - name: Open or update the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Scheduled run failing: ${{ github.workflow }}"
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          existing=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Failed again: $RUN_URL"
+          else
+            gh issue create --title "$TITLE" --body "The scheduled run failed: $RUN_URL"
+          fi

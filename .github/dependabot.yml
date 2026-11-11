@@ -13,6 +13,12 @@ updates:
     # Major-version bumps are left ungrouped so each one gets its own PR
     # and review, rather than being bundled with routine updates.
 
+  - package-ecosystem: "rust-toolchain"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

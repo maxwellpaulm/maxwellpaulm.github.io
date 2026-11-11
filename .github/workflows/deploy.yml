@@ -4,6 +4,10 @@ on:
   push:
     branches: [ master ]
   pull_request:
+  schedule:
+    # 03:47 UTC every Monday — rebuilds without deploying, so an expired key or
+    # a broken external download surfaces before the next real deploy needs it.
+    - cron: "47 3 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -20,12 +24,8 @@ jobs:
       with:
         persist-credentials: false
 
-    # Pinned to master: the action's `stable` branch is rebased, which orphans a pinned SHA.
-    - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
-      with:
-        toolchain: stable
-        components: clippy, rustfmt
-        targets: wasm32-unknown-unknown
+    - name: Install the toolchain pinned in rust-toolchain.toml
+      run: rustup toolchain install
 
     - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
@@ -114,7 +114,7 @@ jobs:
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' && github.event_name != 'schedule'
     permissions:
       pages: write # required by actions/deploy-pages to publish the build
       id-token: write # required by actions/deploy-pages for OIDC auth
@@ -128,3 +128,10 @@ jobs:
     steps:
     - id: deployment
       uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  report-failure:
+    needs: [build]
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      issues: write # passed through to the tracking-issue job
+    uses: $/.github/workflows/report-failure.yml
