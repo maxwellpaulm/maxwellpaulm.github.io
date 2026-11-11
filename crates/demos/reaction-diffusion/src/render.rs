@@ -49,7 +49,7 @@ mod tests {
         let g = Grid::new(8, 8);
         let mut buf = vec![0u8; 8 * 8 * 4];
         paint(&g, Palette::Light, &mut buf);
-        for px in buf.chunks_exact(4) {
+        for px in buf.as_chunks::<4>().0 {
             assert_eq!(px[3], 255, "alpha must be opaque");
         }
     }
