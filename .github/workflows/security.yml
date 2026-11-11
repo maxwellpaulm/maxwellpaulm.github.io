@@ -53,3 +53,10 @@ jobs:
           # PR commenting is disabled rather than granting pull-requests:
           # write beyond the workflow's read-only permissions block.
           GITLEAKS_ENABLE_COMMENTS: "false"
+
+  report-failure:
+    needs: [cargo-deny, zizmor, gitleaks]
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      issues: write # passed through to the tracking-issue job
+    uses: ./.github/workflows/report-failure.yml
