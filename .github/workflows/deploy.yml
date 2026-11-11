@@ -67,7 +67,11 @@ jobs:
       run: ./scripts/render-resume.sh
 
     - name: Install wasm-bindgen-cli
-      run: cargo install wasm-bindgen-cli --version 0.2.127 --locked
+      run: |
+        # The CLI must match the wasm-bindgen crate exactly, so take the version Cargo.lock resolved.
+        version=$(cargo metadata --format-version 1 --locked |
+          jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')
+        cargo install wasm-bindgen-cli --version "$version" --locked
 
     - name: Build WebAssembly
       run: ./scripts/build-wasm.sh
