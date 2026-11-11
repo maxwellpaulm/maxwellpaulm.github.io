@@ -1,25 +1,31 @@
 #!/bin/bash
-# Downloads the resume PDF from the latest release of the private resume repo.
+# Copies the resume PDF committed at the newest release tag of the private
+# resume repo. Auth is whatever SSH identity git finds: a read-only deploy
+# key in CI, your own key locally.
 set -euo pipefail
 
-if [ -z "${GITHUB_TOKEN:-}" ]; then
-    echo "Error: GITHUB_TOKEN is required for private repo access" >&2
+REPO=git@github.com:maxwellpaulm/resume.git
+PDF=paul_maxwell_resume.pdf
+
+TAG=$(git ls-remote --tags --refs --sort=-v:refname "$REPO" 'v*' |
+  awk 'NR == 1 { sub(".*refs/tags/", ""); print }')
+
+if [ -z "$TAG" ]; then
+    echo "Error: no release tag found in $REPO" >&2
+    exit 1
+fi
+
+CHECKOUT=$(mktemp -d)
+trap 'rm -rf "$CHECKOUT"' EXIT
+
+git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$TAG" "$REPO" "$CHECKOUT"
+
+if [ ! -f "$CHECKOUT/$PDF" ]; then
+    echo "Error: $PDF is not committed at $TAG" >&2
     exit 1
 fi
 
 mkdir -p assets
+cp "$CHECKOUT/$PDF" "assets/$PDF"
 
-ASSET_URL=$(curl -sSf -H "Authorization: token $GITHUB_TOKEN" \
-  https://api.github.com/repos/maxwellpaulm/resume/releases/latest | \
-  jq -r '.assets[] | select(.name == "paul_maxwell_resume.pdf") | .url')
-
-if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
-    echo "Error: could not find paul_maxwell_resume.pdf in the latest release" >&2
-    exit 1
-fi
-
-curl -fL -H "Authorization: token $GITHUB_TOKEN" \
-  -H "Accept: application/octet-stream" \
-  "$ASSET_URL" -o assets/paul_maxwell_resume.pdf
-
-echo "Resume downloaded to assets/paul_maxwell_resume.pdf"
+echo "Resume $TAG copied to assets/$PDF"

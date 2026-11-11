@@ -37,8 +37,16 @@ jobs:
 
     - name: Fetch resume
       env:
-        GITHUB_TOKEN: ${{ secrets.RESUME_GITHUB_TOKEN }}
-      run: ./scripts/fetch-resume.sh
+        RESUME_DEPLOY_KEY: ${{ secrets.RESUME_DEPLOY_KEY }}
+        # From https://api.github.com/meta — pinned so the clone cannot be redirected.
+        GITHUB_HOST_KEY: github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+      run: |
+        ssh_dir=$(mktemp -d)
+        trap 'rm -rf "$ssh_dir"' EXIT
+        (umask 077; printf '%s\n' "$RESUME_DEPLOY_KEY" > "$ssh_dir/key")
+        printf '%s\n' "$GITHUB_HOST_KEY" > "$ssh_dir/known_hosts"
+        export GIT_SSH_COMMAND="ssh -i $ssh_dir/key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$ssh_dir/known_hosts"
+        ./scripts/fetch-resume.sh
 
     - name: Install poppler
       run: sudo apt-get update && sudo apt-get install -y poppler-utils
