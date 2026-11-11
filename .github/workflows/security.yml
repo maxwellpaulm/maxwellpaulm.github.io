@@ -59,4 +59,4 @@ jobs:
     if: failure() && github.event_name == 'schedule'
     permissions:
       issues: write # passed through to the tracking-issue job
-    uses: ./.github/workflows/report-failure.yml
+    uses: $/.github/workflows/report-failure.yml
