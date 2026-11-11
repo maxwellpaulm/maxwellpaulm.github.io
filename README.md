@@ -45,7 +45,7 @@ docs/            design specs and implementation plans
 ## Build
 
 ```sh
-./scripts/build-wasm.sh      # compile the demo crates to wasm (needs wasm-bindgen 0.2.127)
+./scripts/build-wasm.sh      # compile the demo crates to wasm (needs the wasm-bindgen CLI at Cargo.lock's wasm-bindgen version)
 cargo run -p site            # render the site into dist/
 cargo test --all             # 164 tests
 cargo fmt --all              # rustfmt.toml keeps the codebase's compact style
