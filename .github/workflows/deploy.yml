@@ -12,6 +12,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Dependabot and fork pull requests get no secrets, so they build without the resume.
+      HAS_RESUME_KEY: ${{ secrets.RESUME_DEPLOY_KEY != '' }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -35,7 +38,14 @@ jobs:
     - name: Test
       run: cargo test --all
 
+    - name: Require the resume key outside pull requests
+      if: github.event_name != 'pull_request' && env.HAS_RESUME_KEY != 'true'
+      run: |
+        echo "::error::RESUME_DEPLOY_KEY is not set; refusing to build a deployable site without the resume"
+        exit 1
+
     - name: Fetch resume
+      if: env.HAS_RESUME_KEY == 'true'
       env:
         RESUME_DEPLOY_KEY: ${{ secrets.RESUME_DEPLOY_KEY }}
         # From https://api.github.com/meta — pinned so the clone cannot be redirected.
@@ -49,9 +59,11 @@ jobs:
         ./scripts/fetch-resume.sh
 
     - name: Install poppler
+      if: env.HAS_RESUME_KEY == 'true'
       run: sudo apt-get update && sudo apt-get install -y poppler-utils
 
     - name: Render resume
+      if: env.HAS_RESUME_KEY == 'true'
       run: ./scripts/render-resume.sh
 
     - name: Install wasm-bindgen-cli
@@ -61,7 +73,9 @@ jobs:
       run: ./scripts/build-wasm.sh
 
     - name: Build site
-      run: cargo run -p site -- --strict
+      env:
+        STRICT: ${{ env.HAS_RESUME_KEY == 'true' && '--strict' || '' }}
+      run: cargo run -p site -- $STRICT
 
     - name: Verify CSP hashes
       run: ./scripts/check-csp-hashes.sh
@@ -79,6 +93,7 @@ jobs:
         # test -f dist/ask/ask_terminal.js
 
     - name: Verify resume shipped
+      if: env.HAS_RESUME_KEY == 'true'
       run: |
         test -f dist/resume/page-01.svg
         test -f dist/assets/paul_maxwell_resume.pdf
