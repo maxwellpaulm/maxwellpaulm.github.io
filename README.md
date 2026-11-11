@@ -55,7 +55,7 @@ cargo fmt --all              # rustfmt.toml keeps the codebase's compact style
 resume artifacts are missing, which is intentional — a local build without the
 private resume PDF should still work, a deploy without it should not.
 
-The resume itself is fetched from a private repo's latest release
+The resume itself is fetched from a private repo's newest release tag
 (`scripts/fetch-resume.sh`) and rasterised to one SVG per page
 (`scripts/render-resume.sh`), so `/resume/` displays the real document inline
 rather than an embedded PDF viewer.
