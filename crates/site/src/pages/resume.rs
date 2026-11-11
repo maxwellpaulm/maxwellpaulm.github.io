@@ -3,7 +3,7 @@ use crate::content::Site;
 use crate::route::Route;
 use maud::{html, Markup};
 
-/// Published location of the PDF fetched from the private release.
+/// Published location of the PDF fetched from the private resume repo.
 pub const RESUME_PDF: &str = "/assets/paul_maxwell_resume.pdf";
 
 /// One rendered resume page: its rooted URL plus the intrinsic dimensions
@@ -27,12 +27,12 @@ pub struct ResumePage {
 /// instead carries a descriptive alt naming its page number, so assistive
 /// tech at least announces the resume's presence and the adjacent download
 /// link.
-pub fn render(site: &Site, pages: &[ResumePage]) -> Markup {
+pub fn render(site: &Site, pdf_url: &str, pages: &[ResumePage]) -> Markup {
     let total = pages.len();
     let main = html! {
         h1 { "Resume" }
         p .prose {
-            a href=(RESUME_PDF) download { "Download PDF" }
+            a href=(pdf_url) download { "Download PDF" }
         }
 
         // width/height are the SVG's own declared dimensions — the browser
@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn resume_shows_one_image_per_page_in_order() {
-        let out = render(&crate::content::fixture_site(), &pages()).into_string();
+        let out = render(&crate::content::fixture_site(), RESUME_PDF, &pages()).into_string();
         let first = out.find("/resume/page-01.svg").expect("page 1 missing");
         let second = out.find("/resume/page-02.svg").expect("page 2 missing");
         assert!(first < second, "pages rendered out of order");
@@ -72,7 +72,7 @@ mod tests {
         let mut pages = pages();
         pages[0].width = 612;
         pages[0].height = 792;
-        let out = render(&crate::content::fixture_site(), &pages).into_string();
+        let out = render(&crate::content::fixture_site(), RESUME_PDF, &pages).into_string();
         assert!(
             out.contains(r#"src="/resume/page-01.svg" width="612" height="792""#),
             "img missing its parsed width/height attributes: {out}"
@@ -81,21 +81,21 @@ mod tests {
 
     #[test]
     fn resume_keeps_the_pdf_download() {
-        let out = render(&crate::content::fixture_site(), &pages()).into_string();
+        let out = render(&crate::content::fixture_site(), RESUME_PDF, &pages()).into_string();
         assert!(out.contains(&format!(r#"href="{RESUME_PDF}""#)), "download link missing");
         assert!(out.contains("download"), "download attribute missing");
     }
 
     #[test]
     fn resume_images_carry_a_meaningful_alt_naming_the_page_number() {
-        let out = render(&crate::content::fixture_site(), &pages()).into_string();
+        let out = render(&crate::content::fixture_site(), RESUME_PDF, &pages()).into_string();
         assert!(out.contains(r#"alt="Resume, page 1 of 2""#), "page 1 alt missing or empty: {out}");
         assert!(out.contains(r#"alt="Resume, page 2 of 2""#), "page 2 alt missing or empty: {out}");
     }
 
     #[test]
     fn resume_without_rendered_pages_still_offers_the_download() {
-        let out = render(&crate::content::fixture_site(), &[]).into_string();
+        let out = render(&crate::content::fixture_site(), RESUME_PDF, &[]).into_string();
         assert!(out.contains(&format!(r#"href="{RESUME_PDF}""#)), "download link missing");
         assert_eq!(out.matches("<img").count(), 0, "no pages should render no images");
     }

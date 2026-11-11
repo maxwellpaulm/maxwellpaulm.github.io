@@ -25,7 +25,7 @@ Concretely, the build refuses to produce a site where:
 - an inline script changes without the Content-Security-Policy being updated to
   match (see [Security](#security)).
 
-164 tests across four crates. Most of them exist to pin an invariant that would
+166 tests across four crates. Most of them exist to pin an invariant that would
 otherwise be silently breakable — including cross-file ones that assert a CSS
 class the JavaScript writes is actually defined in the stylesheet.
 
@@ -47,7 +47,7 @@ docs/            design specs and implementation plans
 ```sh
 ./scripts/build-wasm.sh      # compile the demo crates to wasm (needs the wasm-bindgen CLI at Cargo.lock's wasm-bindgen version)
 cargo run -p site            # render the site into dist/
-cargo test --all             # 164 tests
+cargo test --all             # 166 tests
 cargo fmt --all              # rustfmt.toml keeps the codebase's compact style
 ```
 

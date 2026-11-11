@@ -1,6 +1,6 @@
 use crate::checks;
 use crate::content::Site;
-use crate::pages::resume::ResumePage;
+use crate::pages::resume::{ResumePage, RESUME_PDF};
 use crate::{pages, route::Route, theme};
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
@@ -127,6 +127,29 @@ fn svg_dimensions(svg: &str) -> Result<(u32, u32)> {
     Ok((width, height))
 }
 
+fn fnv1a(bytes: &[u8]) -> u64 {
+    bytes.iter().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+        (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
+    })
+}
+
+/// Gives a file a URL that changes with its contents. The resume files keep
+/// their names across releases and are cached for hours, so without this a
+/// returning visitor keeps seeing the previous resume.
+fn versioned(url: &str, contents: &[u8]) -> String {
+    format!("{url}?v={:016x}", fnv1a(contents))
+}
+
+/// The download link for the resume PDF — versioned when the PDF is present.
+fn resume_pdf_url(root: &Path) -> Result<String> {
+    let path = root.join("assets/paul_maxwell_resume.pdf");
+    if !path.exists() {
+        return Ok(RESUME_PDF.to_string());
+    }
+    let pdf = std::fs::read(&path).with_context(|| format!("reading {}", path.display()))?;
+    Ok(versioned(RESUME_PDF, &pdf))
+}
+
 /// Finds the rendered resume pages, if any exist, in page order.
 fn resume_artifacts(root: &Path) -> Result<Vec<ResumePage>> {
     let dir = root.join("static/resume");
@@ -147,7 +170,8 @@ fn resume_artifacts(root: &Path) -> Result<Vec<ResumePage>> {
             .with_context(|| format!("reading {}", path.display()))?;
         let (width, height) = svg_dimensions(&svg)
             .with_context(|| format!("{} has no parsable svg dimensions", path.display()))?;
-        pages.push(ResumePage { url: format!("/resume/{name}"), width, height });
+        let url = versioned(&format!("/resume/{name}"), svg.as_bytes());
+        pages.push(ResumePage { url, width, height });
     }
 
     Ok(pages)
@@ -163,6 +187,7 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
     let _ask = crate::content::AskContent::load(&root.join("content/ask.toml"))?;
     let mut written = Vec::new();
 
+    let resume_pdf = resume_pdf_url(root)?;
     let resume_pages = resume_artifacts(root)?;
     if resume_pages.is_empty() {
         let msg = "resume pages not rendered — run scripts/render-resume.sh";
@@ -177,7 +202,7 @@ pub fn build(root: &Path, out: &Path, strict: bool) -> Result<Vec<PathBuf>> {
             Route::Index => pages::index::render(&site),
             Route::About => pages::about::render(&site),
             Route::Projects => pages::projects::render(&site),
-            Route::Resume => pages::resume::render(&site, &resume_pages),
+            Route::Resume => pages::resume::render(&site, &resume_pdf, &resume_pages),
             Route::Ask => pages::ask::render(&site),
             Route::Demos => pages::demos::render(&site),
         };
@@ -570,12 +595,33 @@ mod tests {
         }
 
         let pages = resume_artifacts(&dir).unwrap();
-        let urls: Vec<&str> = pages.iter().map(|p| p.url.as_str()).collect();
+        let paths: Vec<&str> =
+            pages.iter().map(|p| p.url.split('?').next().expect("split yields a path")).collect();
         assert_eq!(
-            urls,
+            paths,
             vec!["/resume/page-01.svg", "/resume/page-02.svg", "/resume/page-03.svg"],
             "pages must come back sorted by page number"
         );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn versioned_url_changes_only_when_the_contents_do() {
+        let original = versioned("/resume/page-01.svg", b"first release");
+        assert_eq!(original, versioned("/resume/page-01.svg", b"first release"));
+        assert_ne!(original, versioned("/resume/page-01.svg", b"second release"));
+        assert!(original.starts_with("/resume/page-01.svg?v="), "got {original}");
+    }
+
+    #[test]
+    fn resume_pdf_url_is_versioned_only_when_the_pdf_exists() {
+        let dir = std::env::temp_dir().join("resume-pdf-url-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("assets")).unwrap();
+        assert_eq!(resume_pdf_url(&dir).unwrap(), RESUME_PDF);
+
+        std::fs::write(dir.join("assets/paul_maxwell_resume.pdf"), b"%PDF").unwrap();
+        assert_eq!(resume_pdf_url(&dir).unwrap(), versioned(RESUME_PDF, b"%PDF"));
         std::fs::remove_dir_all(&dir).ok();
     }
 
