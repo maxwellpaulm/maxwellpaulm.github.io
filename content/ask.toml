@@ -3,7 +3,7 @@ examples = ["what did paul build at amazon?", "aho-corasick", "who are you?"]
 
 [[intent]]
 match = ["who are you", "who is paul", "about", "about paul", "tell me about yourself"]
-answer = "I'm Paul Maxwell — a software engineer in Washington, DC, currently at P-1 AI building the platform behind Archie, an AI engineering agent. Before that: fraud detection at Amazon, credit underwriting at Ampla, portfolio analytics at BlackRock."
+answer = "I'm Paul Maxwell — a software engineer in Washington, DC, currently leading platform work at P-1 AI for Archie, an AI engineering agent. Before that: fraud detection at Amazon, credit underwriting at Ampla, portfolio analytics at BlackRock."
 source = "/about/"
 
 [[intent]]
@@ -28,7 +28,7 @@ source = "/"
 
 [[intent]]
 match = ["what do you do", "where do you work", "current job", "what is your job", "where does paul work", "where does he work", "what does he do", "what does he do now", "what is he working on"]
-answer = "Lead Software Engineer at P-1 AI (2025—), working on the platform behind Archie, an AI engineering agent — how it deploys into customer clouds, the capabilities that teach it new domains, and the channels that put it in the tools engineers already use."
+answer = "Lead Software Engineer at P-1 AI (2025—), working on the platform behind Archie, an AI engineering agent — how it deploys into customer clouds, how it learns new domains, how it reaches engineers in the tools they already use, and how the code it writes runs without ever holding a real credential."
 source = "/about/"
 
 [[note]]
