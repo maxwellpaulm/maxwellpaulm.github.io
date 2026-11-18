@@ -174,7 +174,7 @@ mod tests {
         assert_eq!(site.name, "Paul Maxwell");
         assert_eq!(site.location, "Washington, DC");
         assert!(!site.work.is_empty(), "expected selected work entries");
-        assert!(site.lede.len() < 160, "lede should stay a single sentence");
+        assert!(site.lede.len() < 160, "lede should stay short");
         assert!(!site.github.is_empty(), "github must be set");
         assert!(!site.linkedin.is_empty(), "linkedin must be set");
         assert!(

@@ -7,7 +7,9 @@ and docs/superpowers/og-card-lede.txt.
 The OG card prints the lede from content/site.toml; its name, role line, and
 domain are still literals here. og-card-lede.txt records the lede the PNG was
 drawn with, and a test in crates/site fails when it drifts from site.toml —
-rerun this script whenever that test says so.
+rerun this script whenever that test says so. The lede is wrapped into
+balanced lines; the script raises if it needs more than three, overflows the
+margin, or uses a character Inter has no glyph for.
 
 Requires macOS (Quick Look's `qlmanage` and `sips` rasterise the card),
 Python 3.11+, and fontTools with the brotli extra to decode the source
@@ -29,6 +31,9 @@ static/apple-touch-icon.png is NOT produced here and is still a manual step:
     that as touch.svg. Then:
       qlmanage -t -s 180 -o <dir> touch.svg
 """
+import os
+import shutil
+import struct
 import subprocess
 import tempfile
 import tomllib
@@ -119,7 +124,10 @@ def balanced_wrap(s, weight, size_px, max_width):
 
 def site_lede():
     with open(REPO_ROOT / "content" / "site.toml", "rb") as f:
-        return tomllib.load(f)["lede"]
+        lede = tomllib.load(f)["lede"]
+    if not lede.strip():
+        raise ValueError("content/site.toml has a blank lede")
+    return lede
 
 
 # ---------------------------------------------------------------- favicon
@@ -182,8 +190,22 @@ def rasterise_og_card(card_svg):
         src.write_text(square)
         subprocess.run(["qlmanage", "-t", "-s", "1200", "-o", tmp, str(src)],
                        check=True, capture_output=True)
-        subprocess.run(["sips", "-c", "630", "1200", f"{src}.png", "--out", str(OUT / "og-image.png")],
+        cropped = Path(tmp) / "og-image.png"
+        subprocess.run(["sips", "-c", "630", "1200", f"{src}.png", "--out", str(cropped)],
                        check=True, capture_output=True)
+        # Both tools exit 0 without producing a usable image, so check the result itself.
+        if not cropped.exists() or png_size(cropped) != (1200, 630):
+            raise RuntimeError("qlmanage/sips did not produce a 1200x630 og-image.png")
+        staged = OUT / ".og-image.png.tmp"
+        shutil.copyfile(cropped, staged)
+        os.replace(staged, OUT / "og-image.png")
+
+
+def png_size(path):
+    header = path.read_bytes()[:24]
+    if header[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    return struct.unpack(">II", header[16:24])
 
 
 if __name__ == "__main__":
