@@ -35,7 +35,7 @@ mod tests {
         let site = Site::load(Path::new("../../content/site.toml")).unwrap();
         let out = render(&site).into_string();
         assert!(out.contains("Paul"), "name missing");
-        assert!(out.contains("backend systems"), "lede missing");
+        assert!(out.contains(&html! { (site.lede) }.into_string()), "lede missing");
         assert!(out.contains("Selected Work"));
         assert!(out.contains("Archie BYOC Platform"));
         assert!(out.contains(r#"aria-current="page""#));

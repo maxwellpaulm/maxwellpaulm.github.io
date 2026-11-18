@@ -135,10 +135,14 @@ impl Site {
         Ok(site)
     }
 
-    /// Rejects content that would render a broken-looking page. Empty `work`
-    /// or `about` produce a section header over nothing, or a bare heading —
-    /// a content mistake should fail the build loudly rather than ship.
+    /// Rejects content that would render a broken-looking page. A blank
+    /// `lede`, or empty `work` or `about`, produce an empty paragraph, a
+    /// section header over nothing, or a bare heading — a content mistake
+    /// should fail the build loudly rather than ship.
     fn validate(&self, path: &Path) -> Result<()> {
+        if self.lede.trim().is_empty() {
+            bail!("{}: `lede` must not be blank", path.display());
+        }
         if self.about.is_empty() {
             bail!("{}: `about` must not be empty", path.display());
         }
@@ -202,12 +206,33 @@ surprise = "should not parse"
     }
 
     #[test]
+    fn og_card_was_drawn_with_the_current_lede() {
+        let stamp = std::fs::read_to_string("../../docs/superpowers/og-card-lede.txt")
+            .expect("og-card-lede.txt is committed");
+        assert_eq!(
+            stamp.trim_end(),
+            fixture_site().lede,
+            "static/og-image.png prints a stale lede; rerun docs/superpowers/make_assets.py"
+        );
+    }
+
+    #[test]
     fn empty_work_is_rejected() {
         let mut site = fixture_site();
         site.work = vec![];
         let err =
             site.validate(Path::new("content/site.toml")).expect_err("empty work must be rejected");
         assert!(err.to_string().contains("work"), "got: {err}");
+        assert!(err.to_string().contains("site.toml"), "got: {err}");
+    }
+
+    #[test]
+    fn blank_lede_is_rejected() {
+        let mut site = fixture_site();
+        site.lede = " ".into();
+        let err =
+            site.validate(Path::new("content/site.toml")).expect_err("blank lede must be rejected");
+        assert!(err.to_string().contains("lede"), "got: {err}");
         assert!(err.to_string().contains("site.toml"), "got: {err}");
     }
 
