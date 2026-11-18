@@ -1,7 +1,14 @@
 use crate::components::rail::rail;
 use crate::content::Site;
 use crate::route::Route;
+use crate::versioned::versioned;
 use maud::{html, Markup, DOCTYPE};
+
+const OG_IMAGE: &[u8] = include_bytes!("../../../../static/og-image.png");
+
+fn og_image_url(site: &Site) -> String {
+    versioned(&format!("{}/og-image.png", site.url), OG_IMAGE)
+}
 
 /// Wraps page content in the full HTML document. `canonical_path` is the
 /// site-relative path (e.g. `/about/`) this page claims as its one stable
@@ -17,7 +24,7 @@ pub fn page(site: &Site, canonical_path: Option<&str>, title: &str, body: Markup
     let canonical = canonical_path.map(|p| format!("{}{}", site.url, p));
     // Built once and reused for <title> and og:title so the two can never disagree.
     let full_title = format!("{title} · {}", site.name);
-    let og_image = format!("{}/og-image.png", site.url);
+    let og_image = og_image_url(site);
     html! {
         (DOCTYPE)
         html lang="en" {
@@ -217,10 +224,8 @@ mod tests {
         assert!(
             out.contains(&format!(r#"<meta property="og:url" content="{}/projects/">"#, site.url))
         );
-        assert!(out.contains(&format!(
-            r#"<meta property="og:image" content="{}/og-image.png">"#,
-            site.url
-        )));
+        assert!(out
+            .contains(&format!(r#"<meta property="og:image" content="{}">"#, og_image_url(&site))));
         assert!(out.contains(r#"<meta name="twitter:card" content="summary_large_image">"#));
     }
 
@@ -319,10 +324,8 @@ mod tests {
             r#"<meta property="og:description" content="{}">"#,
             site.description
         )));
-        assert!(out.contains(&format!(
-            r#"<meta property="og:image" content="{}/og-image.png">"#,
-            site.url
-        )));
+        assert!(out
+            .contains(&format!(r#"<meta property="og:image" content="{}">"#, og_image_url(&site))));
     }
 
     #[test]

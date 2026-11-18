@@ -28,7 +28,7 @@ source = "/"
 
 [[intent]]
 match = ["what do you do", "where do you work", "current job", "what is your job", "where does paul work", "where does he work", "what does he do", "what does he do now", "what is he working on"]
-answer = "Lead Software Engineer at P-1 AI (2025—), working on the platform behind Archie, an AI engineering agent — how it deploys into customer clouds, how it learns new domains, how it reaches engineers in the tools they already use, and how the code it writes runs without ever holding a real credential."
+answer = "Lead Software Engineer at P-1 AI (2025—), leading the design of the platform behind Archie, an AI engineering agent — how it deploys into customer clouds, how it learns new domains, how it reaches engineers in the tools they already use, and how the code it writes runs without ever holding a real credential."
 source = "/about/"
 
 [[note]]

@@ -10,6 +10,7 @@ mod content;
 mod pages;
 mod route;
 mod theme;
+mod versioned;
 
 use anyhow::Result;
 use std::path::Path;

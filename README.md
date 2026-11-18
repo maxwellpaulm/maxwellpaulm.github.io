@@ -25,7 +25,7 @@ Concretely, the build refuses to produce a site where:
 - an inline script changes without the Content-Security-Policy being updated to
   match (see [Security](#security)).
 
-168 tests across four crates. Most of them exist to pin an invariant that would
+169 tests across four crates. Most of them exist to pin an invariant that would
 otherwise be silently breakable — including cross-file ones that assert a CSS
 class the JavaScript writes is actually defined in the stylesheet.
 
@@ -47,7 +47,7 @@ docs/            design specs and implementation plans
 ```sh
 ./scripts/build-wasm.sh      # compile the demo crates to wasm (needs the wasm-bindgen CLI at Cargo.lock's wasm-bindgen version)
 cargo run -p site            # render the site into dist/
-cargo test --all             # 168 tests
+cargo test --all             # 169 tests
 cargo fmt --all              # rustfmt.toml keeps the codebase's compact style
 ```
 
@@ -104,7 +104,7 @@ and it returned a passage I'd actually written, ranked in the browser, with a
 link to its source page. No LLM, deliberately, so the site couldn't invent
 claims about my career.
 
-It works and it's fully tested, but a search box over ~12 passages is a less
+It works and it's fully tested, but a search box over a dozen or so passages is a less
 interesting artifact than it sounds, so the route is parked rather than
 deleted. `Route::ALL` documents the four commented-out lines that bring it
 back, and a test (`parked_ask_terminal_publishes_nothing`) fails loudly if it's

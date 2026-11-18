@@ -1,7 +1,7 @@
 name = "Paul Maxwell"
 location = "Washington, DC"
 role = "Lead Software Engineer / P-1 AI / 2025 —"
-lede = "Software engineer. I design and build AI agent systems — how they run, what they can do, where they meet people, and what they're trusted with."
+lede = "I design and build AI agent systems — how they run, what they can do, where they meet people, and what they're trusted with."
 bio = "Currently leading platform work at P-1 AI for Archie, an AI engineering agent. Before that: fraud detection at Amazon, credit underwriting at Ampla, portfolio analytics at BlackRock."
 description = "Paul Maxwell — software engineer designing and building AI agent systems at P-1 AI. Washington, DC."
 url = "https://paul-maxwell.com"
@@ -10,7 +10,7 @@ linkedin = "https://www.linkedin.com/in/maxwellpaulm"
 projects_intro = "Selected work, most recent first."
 
 about = [
-  "I'm a software engineer in Washington, DC. At P-1 AI I work on the architecture of the platform behind an AI engineering agent: how it deploys into customer clouds, how it learns new domains, how it reaches engineers in the tools they already use, and how the code it writes runs without ever holding a real credential. Earlier I worked on fraud detection at Amazon, underwriting systems at Ampla, and portfolio tooling at BlackRock.",
+  "I'm a software engineer in Washington, DC. At P-1 AI I lead the design of the platform behind Archie, an AI engineering agent: how it deploys into customer clouds, how it learns new domains, how it reaches engineers in the tools they already use, and how the code it writes runs without ever holding a real credential. Earlier I worked on fraud detection at Amazon, underwriting systems at Ampla, and portfolio tooling at BlackRock.",
   "I have a master's in computer science from Georgia Tech, a BSE from Michigan, and a CFA charter.",
   "In 2023 I was one of 24 finishers (of about 3,300) in the NSA Codebreaker Challenge.",
 ]
@@ -30,10 +30,17 @@ summary = "The supply chain that lets an AI engineering agent learn a new domain
 detail = "A capability bundles a Python library, the skills that tell the model how to use it, and its tests. An SDK and CLI define the authoring contract and scaffold, validate, and publish. The catalog is immutable records over content-addressed blobs in a bucket, run as triggerable jobs with no resident server — the bucket layout is the whole API. An image factory resolves an agent's capability set to exact digests and builds one immutable image, so the sandbox installs nothing at runtime. The zero-trust gateway below brokers every credential that code touches."
 
 [[work]]
+title = "Dataset Pipeline"
+org = "P-1 AI"
+year = "2026"
+summary = "Packages raw data into content-addressed OCI artifacts through pluggable sources, transforms, and sinks."
+detail = "Hugging Face is one of the pluggable sources. Runs are orchestrated on Kubernetes by a custom resource definition and its controller."
+
+[[work]]
 title = "Archie BYOC Platform"
 org = "P-1 AI"
 year = "2025"
-summary = "Deploys an engineering AI agent into customer-controlled cloud; each install assembles from independently versioned components."
+summary = "Deploys an AI engineering agent into customer-controlled cloud; each install assembles from independently versioned components."
 detail = "P-1's engineering agent runs inside customer cloud environments rather than ours. Each install is assembled from independently versioned components, so deployments can differ per customer without forking the platform."
 
 [[work]]
@@ -42,6 +49,13 @@ org = "P-1 AI"
 year = "2025"
 summary = "A phantom-token pattern — agent code in ephemeral sandboxes holds only opaque, request-scoped tokens; the gateway keeps every real credential."
 detail = "Agent-written code runs in ephemeral sandboxes and never holds real credentials. Sandboxes get opaque, request-scoped tokens; the gateway holds the real ones and enforces authentication, authorization, scoping, and rate limits."
+
+[[work]]
+title = "Observability Foundation"
+org = "P-1 AI"
+year = "2025"
+summary = "OpenTelemetry instrumentation across every service, feeding a self-managed Grafana LGTM stack."
+detail = "Logs, metrics, and traces from every service live in one place, with alerting and on-call tooling."
 
 [[work]]
 title = "Duplicate-Invoice Detection"
