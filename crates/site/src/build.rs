@@ -1,6 +1,7 @@
 use crate::checks;
 use crate::content::Site;
 use crate::pages::resume::{ResumePage, RESUME_PDF};
+use crate::versioned::versioned;
 use crate::{pages, route::Route, theme};
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
@@ -125,19 +126,6 @@ fn svg_dimensions(svg: &str) -> Result<(u32, u32)> {
     let width = svg_attr_length(open_tag, "width").context("no parsable width on <svg> root")?;
     let height = svg_attr_length(open_tag, "height").context("no parsable height on <svg> root")?;
     Ok((width, height))
-}
-
-fn fnv1a(bytes: &[u8]) -> u64 {
-    bytes.iter().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
-        (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
-    })
-}
-
-/// Gives a file a URL that changes with its contents. The resume files keep
-/// their names across releases and are cached for hours, so without this a
-/// returning visitor keeps seeing the previous resume.
-fn versioned(url: &str, contents: &[u8]) -> String {
-    format!("{url}?v={:016x}", fnv1a(contents))
 }
 
 /// The download link for the resume PDF — versioned when the PDF is present.
@@ -606,14 +594,6 @@ mod tests {
     }
 
     #[test]
-    fn versioned_url_changes_only_when_the_contents_do() {
-        let original = versioned("/resume/page-01.svg", b"first release");
-        assert_eq!(original, versioned("/resume/page-01.svg", b"first release"));
-        assert_ne!(original, versioned("/resume/page-01.svg", b"second release"));
-        assert!(original.starts_with("/resume/page-01.svg?v="), "got {original}");
-    }
-
-    #[test]
     fn resume_pdf_url_is_versioned_only_when_the_pdf_exists() {
         let dir = std::env::temp_dir().join("resume-pdf-url-test");
         let _ = std::fs::remove_dir_all(&dir);
@@ -707,6 +687,25 @@ mod tests {
         for asset in ["favicon.svg", "apple-touch-icon.png", "og-image.png"] {
             assert!(tmp.join(asset).exists(), "missing {asset} in build output");
         }
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn og_image_is_fingerprinted_with_the_png_that_ships() {
+        let tmp = std::env::temp_dir().join("site-build-test-og-image");
+        let _ = std::fs::remove_dir_all(&tmp);
+
+        build(Path::new("../.."), &tmp, false).expect("build succeeds");
+
+        let site = Site::load(Path::new("../../content/site.toml")).unwrap();
+        let shipped = std::fs::read(tmp.join("og-image.png")).unwrap();
+        let expected = format!(
+            r#"<meta property="og:image" content="{}">"#,
+            versioned(&format!("{}/og-image.png", site.url), &shipped)
+        );
+        let index = std::fs::read_to_string(tmp.join("index.html")).unwrap();
+        assert!(index.contains(&expected), "expected {expected}");
 
         std::fs::remove_dir_all(&tmp).ok();
     }
